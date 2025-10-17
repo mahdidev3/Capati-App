@@ -38,7 +38,7 @@ def process_video_translation(project_id: int):
             print(f"Project type: {project_type}")
 
             result_path = translate_video(
-                project_id=project_id,
+                project=project,
                 video_path=video_path,
                 operation_type=project_type,
             )

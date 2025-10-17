@@ -1,5 +1,7 @@
 # app/schemas/project.py
-from pydantic import BaseModel
+import re
+
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from datetime import datetime
 
@@ -39,18 +41,53 @@ class VideoUploadResponse(BaseModel):
     size: int
     duration: int  # شبیه‌سازی شده
 
-class TranslationOptionsRequest(BaseModel):
+class TranslationPricesRequest(BaseModel):
     duration: float
     resolution: str
 
-class TranslationOptionsResponse(BaseModel):
+    @field_validator("resolution")
+    @classmethod
+    def validate_resolution(cls, value: str) -> str:
+        # Regular expression for resolution format: {width}x{height}
+        pattern = r"^\d+x\d+$"
+        if not re.match(pattern, value):
+            raise ValueError("Resolution must be in the format 'WIDTHxHEIGHT' (e.g., '1920x1080')")
+
+        # Split the resolution into width and height
+        width, height = map(int, value.split("x"))
+
+        # Ensure width and height are positive
+        if width <= 0 or height <= 0:
+            raise ValueError("Width and height must be positive integers")
+
+        return value
+
+class TranslationPricesResponse(BaseModel):
     success: bool
     data: dict
 
 class StartTranslationRequest(BaseModel):
-    videoSize: int  # bytes - required now
+    duration: int
+    resolution: str
     projectType: str
+    videoSize : int
     useWalletBalance: bool = True
+
+    @field_validator("resolution")
+    @classmethod
+    def validate_resolution(cls, value: str) -> str:
+        # Regular expression for resolution format: {width}x{height}
+        pattern = r"^\d+x\d+$"
+        if not re.match(pattern, value):
+            raise ValueError("Resolution must be in the format 'WIDTHxHEIGHT' (e.g., '1920x1080')")
+
+        # Split the resolution into width and height
+        width, height = map(int, value.split("x"))
+        # Ensure width and height are positive
+        if width <= 0 or height <= 0:
+            raise ValueError("Width and height must be positive integers")
+
+        return value
 
 
 class StartTranslationResponse(BaseModel):

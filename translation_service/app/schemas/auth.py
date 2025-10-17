@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field , field_validator
 from typing import Optional
 
 from app.core.config import settings
-
+import re
 
 class MobileRequest(BaseModel):
     mobile: str
@@ -21,7 +21,6 @@ class OtpLoginRequest(BaseModel):
 
     @field_validator("mobile")
     def validate_mobile(cls, v):
-        import re
         if not re.match(settings.MOBILE_PATTERN, v):
             raise ValueError("شماره موبایل نامعتبر است")
         return v
@@ -32,7 +31,6 @@ class PasswordLoginRequest(BaseModel):
 
     @field_validator("mobile")
     def validate_mobile(cls, v):
-        import re
         if not re.match(settings.MOBILE_PATTERN, v):
             raise ValueError("شماره موبایل نامعتبر است")
         return v
@@ -53,7 +51,6 @@ class SignupCompleteRequest(BaseModel):
 
     @field_validator("mobile")
     def validate_mobile(cls, v):
-        import re
         if not re.match(settings.MOBILE_PATTERN, v):
             raise ValueError("شماره موبایل نامعتبر است")
         return v
@@ -73,7 +70,6 @@ class UserResponse(BaseModel):
 
     @field_validator("mobile")
     def validate_mobile(cls, v):
-        import re
         if not re.match(settings.MOBILE_PATTERN, v):
             raise ValueError("شماره موبایل نامعتبر است")
         return v

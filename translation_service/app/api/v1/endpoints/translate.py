@@ -14,13 +14,13 @@ from app.core.database import get_db, SessionLocal
 from app.models.user import User
 from app.models.project import Project as DBProject, ProjectStatus, get_project_type
 from app.schemas.project import (
-    VideoUploadResponse, TranslationOptionsResponse,
+    VideoUploadResponse, TranslationPricesResponse,
     StartTranslationRequest, StartTranslationResponse,
-    TranslationStatusResponse, DownloadUrlResponse, TranslationOptionsRequest
+    TranslationStatusResponse, DownloadUrlResponse, TranslationPricesRequest
 )
 from app.api.deps import get_current_user
 from app.services.download import verify_download_token, get_download_url_with_token
-from app.services.pricing import PRICING, calculate_price, get_pricing
+from app.services.pricing import PRICING, calculate_price, calculate_prices
 from app.core.security import generate_upload_token, verify_upload_token, create_access_token
 from app.core.websocket_manager import manager
 from app.services.videos import add_to_executor
@@ -32,44 +32,14 @@ os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 os.makedirs(settings.TRANSLATED_DIR, exist_ok=True)
 
 
-@router.post("/translate/prices", response_model=TranslationOptionsResponse)
-def get_translation_options(request: TranslationOptionsRequest, current_user: User = Depends(get_current_user)):
+@router.post("/translate/prices", response_model=TranslationPricesResponse)
+def get_translation_options(request: TranslationPricesRequest, current_user: User = Depends(get_current_user)):
     try:
         duration = request.duration  # مدت زمان ویدیو (به ثانیه)
-        resolution = request.resolution  # رزولوشن ویدیو (مثل "1280x720")
 
-        # قیمت پایه برای هر عملیات (به تومان در دقیقه)
-        base_prices = {
-            "english_subtitle": 4000,
-            "persian_subtitle": 4000,
-            "persian_dubbing": 5000,
-            "persian_dubbing_english_subtitle": 6000,
-            "persian_dubbing_persian_subtitle": 6000
-        }
+        width, height = map(int, request.resolution .split("x"))
 
-        # محاسبه ضریب بر اساس رزولوشن
-        height = 720
-        width = 1280
-        if resolution and "x" in resolution:
-            height = int(resolution.split("x")[1])
-            width = int(resolution.split("x")[0])
-
-        multiplier = 1.0
-        if height * width > (3840 * 2160):  # 4K
-            multiplier = 4.0
-        elif height * width > (2560 * 1440):  # 2K
-            multiplier = 3.0
-        elif height * width > (1920 * 1080):  # Full HD
-            multiplier = 2.0
-        elif height * width > (1280 * 720):  # HD
-            multiplier = 1.5
-
-        # محاسبه قیمت برای هر عملیات
-        minutes = max(1, math.ceil(duration / 60))  # تبدیل به دقیقه
-        prices = {
-            op: math.ceil(minutes * price * multiplier)
-            for op, price in base_prices.items()
-        }
+        prices = calculate_prices(width , height , duration)
 
         return {
             "success": True,
@@ -99,7 +69,10 @@ def start_translation(
                 message="گزینه ترجمه یافت نشد",
                 status_code=404
             )
-        total_price = calculate_price(request.projectType, request.videoSize)
+
+        width, height = map(int, request.resolution.split("x"))
+
+        total_price, multiplier, video_type = calculate_price(request.projectType,width , height , request.duration)
         if request.useWalletBalance and current_user.balance < total_price:
             app_error(
                 code="INSUFFICIENT_BALANCE",
@@ -113,7 +86,7 @@ def start_translation(
             user_id=current_user.id,
             video_id=None,
             status=ProjectStatus.awaiting_upload,
-            price=total_price
+            price=total_price,
         )
         db.add(new_project)
         db.flush()
@@ -368,7 +341,6 @@ def download_file(
                 message="لینک دانلود نامعتبر یا منقضی شده است",
                 status_code=401
             )
-        print(11111111111111111)
         project = db.query(DBProject).filter(DBProject.id == project_id, DBProject.user_id == current_user.id).first()
         if not project or project.status != ProjectStatus.completed:
             app_error(
@@ -376,7 +348,6 @@ def download_file(
                 message="فایل برای دانلود یافت نشد",
                 status_code=404
             )
-        print(session)
         file_path = os.path.join(settings.TRANSLATED_DIR,
                                  f"{project.id}_translated.{project.video_id.split('.')[-1]}")
         if not os.path.exists(file_path):

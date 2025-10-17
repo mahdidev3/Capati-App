@@ -18,11 +18,11 @@ def dub_with_english_subtitle(video_path='t.mp4', tts=''):
 def dub_with_persian_subtitle(video_path='t.mp4', tts=''):
     return video_path
 
-def translate_video(project_id, video_path, operation_type):
+def translate_video(project, video_path, operation_type):
     # Placeholder: Implement actual translation logic
     import os
     from app.core.config import settings
-    translated_path = os.path.join(settings.TRANSLATED_DIR, f"{project_id}_translated.{video_path.split('.')[-1]}")
+    translated_path = os.path.join(settings.TRANSLATED_DIR, f"{project}_translated.{video_path.split('.')[-1]}")
     open(translated_path, "a").close()  # Simulate translation output
     return translated_path
 

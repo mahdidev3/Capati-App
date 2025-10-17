@@ -37,14 +37,14 @@ class TranslationService:
             response = requests.post(
                 f"{self.backend_url}/translate/prices",
                 json = {
-                    data.get('duration'),
-                    data.get('resolution')
+                    'duration' : data.get('duration'),
+                    'resolution' : data.get('resolution')
                 },
                 cookies=cookies
             )
-
-            if response.status_code == 200:
-                return jsonify(response.json())
+            response_data = response.json()
+            if response.status_code == 200 and response_data.get('success'):
+                return jsonify(response_data.get('data'))
             elif response.status_code == 401:
                 return redirect(url_for('auth.login'))
             else:
@@ -53,17 +53,21 @@ class TranslationService:
             return jsonify({"success": False, "message": "Server error"})
     
     def start_translation(self, data, cookies):
-        video_size = data.get('videoSize')
-        project_type = data.get('projectType')
-        use_wallet_balance = data.get('useWalletBalance', True)
+        duration = data.get('duration')
+        resolution = data.get('resolution')
+        projectType = data.get('projectType')
+        video_size = data.get('video_size')
+        useWalletBalance = data.get('useWalletBalance', True)
 
         try:
             response = requests.post(
                 f"{self.backend_url}/translate/start",
                 json={
-                    "videoSize": video_size,
-                    "projectType": project_type,
-                    "useWalletBalance": use_wallet_balance
+                    "duration": duration,
+                    "resolution" :resolution,
+                    "projectType": projectType,
+                    "videoSize" : video_size,
+                    "useWalletBalance": True
                 },
                 cookies=cookies
             )

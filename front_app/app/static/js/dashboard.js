@@ -4,6 +4,7 @@
 let currentSection = 'dashboard';
 let sidebarCollapsed = false;
 let API_BASE_URL = '/api';
+let pricingData = null; // Store pricing data from API
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
@@ -11,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFileUpload();
     initializeSidebar();
     initializeFormValidation();
-    
+
     // Hide unsupported features
     hideUnsupportedFeatures();
 });
@@ -347,9 +348,9 @@ function initializeFileUpload() {
                 if (resolutionInput) {
                     resolutionInput.value = window.selectedVideoResolution;
                 }
-                // Update cost preview with current form state
-                recalculateCostAndDuration();
-                updateOperationPrices(resolution);
+
+                // Fetch pricing data from API
+                fetchPricingData(duration, resolution);
             }).catch(() => {
                 // Default resolution if detection fails
                 window.selectedVideoResolution = '1280x720';
@@ -357,9 +358,9 @@ function initializeFileUpload() {
                 if (resolutionInput) {
                     resolutionInput.value = window.selectedVideoResolution;
                 }
-                // Update cost preview with current form state
-                recalculateCostAndDuration();
-                updateOperationPrices('1280x720');
+
+                // Fetch pricing data from API
+                fetchPricingData(duration, '1280x720');
             });
 
             // Update file info to show actual duration
@@ -399,8 +400,9 @@ function initializeFileUpload() {
             if (durationInput) {
                 durationInput.value = estimatedDuration;
             }
-            // Update cost preview with current form state
-            recalculateCostAndDuration();
+
+            // Fetch pricing data from API
+            fetchPricingData(estimatedDuration, '1280x720');
 
             // Show estimated duration with warning
             if (fileInfo) {
@@ -426,6 +428,62 @@ function initializeFileUpload() {
             costPlaceholder.style.display = 'none';
         }
     }
+}
+
+// Fetch pricing data from API
+function fetchPricingData(duration, resolution) {
+    fetch(`${API_BASE_URL}/translate/prices`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+            duration: duration,
+            resolution: resolution
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.options) {
+            pricingData = data.options;
+            // Update operation prices in the UI
+            updateOperationPricesFromAPI();
+            // Update cost preview
+            recalculateCostAndDuration();
+        } else {
+            console.error('Invalid pricing data received');
+            showMessage('خطا در دریافت اطلاعات قیمت‌گذاری', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching pricing data:', error);
+        showMessage('خطا در دریافت اطلاعات قیمت‌گذاری', 'danger');
+    });
+}
+
+// Update operation prices from API data
+function updateOperationPricesFromAPI() {
+    if (!pricingData) return;
+
+    // Update all operation price displays
+    const operationCards = document.querySelectorAll('.operation-card');
+    operationCards.forEach(card => {
+        const operationInput = card.querySelector('input[name="operation_type"]');
+        if (operationInput && pricingData[operationInput.value]) {
+            const priceElement = card.querySelector('.base-cost');
+            if (priceElement) {
+                const price = pricingData[operationInput.value].cost_per_minute;
+                priceElement.textContent = price.toLocaleString('fa-IR');
+            }
+
+            // Update quality note if available
+            const qualityNote = card.querySelector('.quality-note');
+            if (qualityNote && pricingData[operationInput.value].video_type) {
+                qualityNote.textContent = `برای ${pricingData[operationInput.value].video_type}`;
+            }
+        }
+    });
 }
 
 // Translation form functionality
@@ -482,41 +540,35 @@ function updateCostPreview(duration) {
 
     const operationType = document.querySelector('input[name="operation_type"]:checked');
 
-    if (duration && operationType) {
+    if (duration && operationType && pricingData && pricingData[operationType.value]) {
         const minutes = Math.max(1, Math.ceil(duration / 60));
-
-        // Get resolution from stored value or default
-        const resolution = window.selectedVideoResolution || '720p';
-        const costPerMinute = getOperationCost(operationType.value, resolution);
-        const cost = minutes * costPerMinute;
+        const operationData = pricingData[operationType.value];
+        const costPerMinute = operationData.cost_per_minute;
+        const multiplier = operationData.multiplier || 1.0;
+        const cost = operationData.price;
 
         // Update resolution display
         const videoResolution = document.getElementById('videoResolution');
         if (videoResolution) {
-            if (resolution.includes('x')) {
-                const height = parseInt(resolution.split('x')[1]);
-                let resText = resolution;
-                if (height <= 720) resText += ' (قیمت پایه)';
-                else if (height <= 1080) resText += ' (+1000 تومان/دقیقه)';
-                else if (height < 2160) resText += ' (+2000 تومان/دقیقه)';
-                else resText += ' (4K - +3000 تومان/دقیقه)';
-                videoResolution.textContent = resText;
-            } else {
-                videoResolution.textContent = resolution;
+            const resolution = window.selectedVideoResolution || '1280x720';
+            let resText = resolution;
+            if (operationData.video_type) {
+                resText += ` (${operationData.video_type})`;
             }
+            videoResolution.textContent = resText;
         }
 
         // Get current user credits
         const creditsElement = document.querySelector('.user-details .credits, .mobile-credits');
-        const userCredits = creditsElement ? parseInt(creditsElement.textContent.replace(/[^0-9]/g, '')) : 0;
+        const userCredits = (creditsElement ? parseInt(creditsElement.textContent.replace(/[^0-9]/g, '')) : 0)/10;
         const remaining = userCredits - cost;
 
         // Update display elements
         if (videoDuration) videoDuration.textContent = formatDuration(duration);
         if (selectedOperation) selectedOperation.textContent = getOperationName(operationType.value);
-        if (totalCost) totalCost.textContent = cost.toLocaleString('fa-IR') + ' تومان';
+        if (totalCost) totalCost.textContent = cost.toLocaleString('en') + ' تومان';
         if (remainingCredits) {
-            remainingCredits.textContent = remaining.toLocaleString('fa-IR') + ' تومان';
+            remainingCredits.textContent = remaining.toLocaleString('en') + ' تومان';
             remainingCredits.className = remaining >= 0 ? 'text-success' : 'text-danger';
         }
 
@@ -557,39 +609,20 @@ function updateCostPreview(duration) {
 
 // Helper functions
 function getOperationCost(operationType, resolution = '720p') {
-    // Get base cost based on operation type (for 720p or lower) - in credits
+    // Use API data if available
+    if (pricingData && pricingData[operationType]) {
+        return pricingData[operationType].cost_per_minute;
+    }
+
+    // Fallback to hardcoded values
     const baseCosts = {
-        'english_subtitle': 3,  // 3 credits = 3000 tomans
-        'persian_subtitle': 4,  // 4 credits = 4000 tomans
-        'persian_dubbing': 5,   // 5 credits = 5000 tomans
-        'persian_dubbing_english_subtitle': 6, // 6 credits = 6000 tomans
-        'persian_dubbing_persian_subtitle': 6  // 6 credits = 6000 tomans
+        'english_subtitle': 3000,
+        'persian_subtitle': 4000,
+        'persian_dubbing': 5000,
+        'persian_dubbing_english_subtitle': 6000,
+        'persian_dubbing_persian_subtitle': 6000
     };
-
-    let baseCost = baseCosts[operationType] || 3;
-
-    // Adjust cost based on resolution
-    let height = 720; // Default
-    if (resolution && typeof resolution === 'string') {
-        if (resolution.includes('x')) {
-            height = parseInt(resolution.split('x')[1]);
-        } else if (resolution.toLowerCase().includes('p')) {
-            height = parseInt(resolution.toLowerCase().replace('p', ''));
-        }
-    } else if (typeof resolution === 'number') {
-        height = resolution;
-    }
-
-    // Apply multiplier based on quality
-    let multiplier = 1.0;
-    if (height > 1080) {
-        multiplier = 2.0;  // 4K: 2x base cost
-    } else if (height > 720) {
-        multiplier = 1.5;  // Full HD: 1.5x base cost
-    }
-    // 720p and below: base cost (multiplier = 1.0)
-
-    return Math.ceil(baseCost * multiplier * 1000); // Convert to Tomans
+    return baseCosts[operationType] || 3000;
 }
 
 function getOperationName(operationType) {
@@ -657,48 +690,21 @@ function detectVideoResolution(file) {
 
 // Update operation prices based on detected video resolution
 function updateOperationPrices(resolution) {
-    // Parse resolution to get height
-    let height = 720;
-    if (resolution && typeof resolution === 'string') {
-        if (resolution.includes('x')) {
-            height = parseInt(resolution.split('x')[1]);
-        } else if (resolution.toLowerCase().includes('p')) {
-            height = parseInt(resolution.toLowerCase().replace('p', ''));
-        }
+    // This function is now handled by updateOperationPricesFromAPI
+    // which uses the API response instead of calculating locally
+    if (pricingData) {
+        updateOperationPricesFromAPI();
     }
-
-    // Determine price multiplier based on quality
-    let priceNote = 'قیمت پایه';
-    let multiplier = 1.0;
-
-    if (height > 1080) {
-        multiplier = 2.0;
-        priceNote = '۲x قیمت پایه (4K)';
-    } else if (height > 720) {
-        multiplier = 1.5;
-        priceNote = '۱.۵x قیمت پایه (Full HD)';
-    }
-
-    // Update all operation price displays
-    const baseCosts = document.querySelectorAll('.base-cost');
-    baseCosts.forEach(element => {
-        const operation = element.dataset.operation;
-        if (operation) {
-            const basePrice = getBasePrice(operation);
-            const adjustedPrice = Math.ceil(basePrice * multiplier);
-            element.textContent = adjustedPrice.toLocaleString('fa-IR');
-        }
-    });
-
-    // Update quality notes
-    const qualityNotes = document.querySelectorAll('.quality-note');
-    qualityNotes.forEach(note => {
-        note.textContent = priceNote;
-    });
 }
 
 // Get base price for an operation type (in Tomans)
 function getBasePrice(operationType) {
+    // Use API data if available
+    if (pricingData && pricingData[operationType]) {
+        return pricingData[operationType].price;
+    }
+
+    // Fallback to hardcoded values
     const basePrices = {
         'english_subtitle': 3000,
         'persian_subtitle': 4000,
@@ -805,6 +811,7 @@ function initializeFormValidation() {
 }
 
 // Websocket upload functionality
+// Websocket upload functionality
 function startWebsocketUpload(file, operationType, sourceLanguage, targetLanguage) {
     // Show upload progress UI
     const uploadProgress = document.getElementById('uploadProgress');
@@ -817,8 +824,9 @@ function startWebsocketUpload(file, operationType, sourceLanguage, targetLanguag
     submitBtn.innerHTML = '<i data-feather="upload-cloud" class="me-1"></i>در حال آپلود...';
     if (typeof feather !== 'undefined') feather.replace();
 
-    // Get duration from the form
-    const duration = document.getElementById('durationInput').value || 60;
+    // Get duration and resolution from stored values
+    const duration = parseInt(document.getElementById('durationInput').value) || 60;
+    const resolution = window.selectedVideoResolution || '1280x720';
 
     // Start translation
     fetch(`${API_BASE_URL}/translate/start`, {
@@ -828,7 +836,9 @@ function startWebsocketUpload(file, operationType, sourceLanguage, targetLanguag
         },
         credentials: 'include',
         body: JSON.stringify({
-            videoSize: file.size,
+            video_size: file.size,
+            duration: duration,
+            resolution: resolution,
             projectType: operationType,
             useWalletBalance: true
         })

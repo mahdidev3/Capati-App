@@ -70,7 +70,6 @@ class KavenegarService:
         if template not in self.available_templates:
             return False
         try:
-            print(code)
             params = {
                 "receptor": receptor,
                 "template": template,  # Template name in Kavenegar dashboard
@@ -78,7 +77,6 @@ class KavenegarService:
                 "type": "sms",
             }
             response = self.api.verify_lookup(params)
-            print("Kavenegar Verify response:", response)
             return True
         except (APIException, HTTPException) as e:
             # Fallback: regular SMS
