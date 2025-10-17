@@ -1,0 +1,388 @@
+API Design for Translation Service Platform
+
+Base URL
+https://api.example.com/v1 # for production
+http://localhost/v1 # for development
+
+Authentication APIs
+1. Send OTP for Login
+POST /auth/login-otp
+
+Request Body:
+{
+  "mobile": "09123456789"
+}
+
+Response:
+{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "abc123def456"
+}
+
+2. Login with OTP
+POST /auth/login-otp-verify
+
+Request Body:
+{
+  "mobile": "09123456789",
+  "otp": "123456",
+  "otpId": "abc123def456"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "mobile": "09123456789"
+  }
+}
+Headers:
+Set-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000
+
+3. Login with Password
+POST /auth/login-password
+
+Request Body:
+{
+  "mobile": "09123456789",
+  "password": "securePassword123"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "mobile": "09123456789"
+  }
+}
+Headers:
+Set-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000
+
+4. Send OTP for Signup
+POST /auth/signup-otp
+
+Request Body:
+{
+  "mobile": "09123456789"
+}
+
+Response:
+{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "abc123def456"
+}
+
+5. Verify OTP and Complete Signup
+POST /auth/signup-complete
+
+Request Body:
+{
+  "mobile": "09123456789",
+  "otp": "123456",
+  "otpId": "abc123def456",
+  "password": "securePassword123"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Account created successfully",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "mobile": "09123456789"
+  }
+}
+Headers:
+Set-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000
+
+6. Logout
+POST /auth/logout
+Response:
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+Headers:
+Set-Cookie: auth_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0
+
+Dashboard APIs
+1. Get Dashboard Data
+GET /dashboard
+
+Response:
+{
+  "success": true,
+  "data": {
+    "balance": 50000,
+    "recentProjects": [
+      {
+        "id": "proj1",
+        "name": "Video Translation 1",
+        "type": "English Subtitle",
+        "status": "completed",
+        "createdAt": "2023-05-15T10:30:00Z",
+        "completedAt": "2023-05-16T14:20:00Z"
+      },
+      {
+        "id": "proj2",
+        "name": "Video Translation 2",
+        "type": "Persian Dubbing",
+        "status": "processing",
+        "createdAt": "2023-05-17T09:15:00Z"
+      }
+    ],
+    "inProgressProjects": [
+      {
+        "id": "proj2",
+        "name": "Video Translation 2",
+        "type": "Persian Dubbing",
+        "status": "processing",
+        "createdAt": "2023-05-17T09:15:00Z",
+        "progress": 65
+      }
+    ],
+    "completedProjects": [
+      {
+        "id": "proj1",
+        "name": "Video Translation 1",
+        "type": "English Subtitle",
+        "status": "completed",
+        "createdAt": "2023-05-15T10:30:00Z",
+        "completedAt": "2023-05-16T14:20:00Z"
+      }
+    ]
+  }
+}
+
+Account APIs
+1. Get Account Information
+GET /account
+Response:
+{
+  "success": true,
+  "data": {
+    "statistics": {
+      "currentBalance": 50000,
+      "joinDate": "2023-01-10T00:00:00Z"
+    },
+    "profile": {
+      "firstName": "John",
+      "lastName": "Doe"
+    },
+    "advancedSettings": {
+      "mobile": "09123456789",
+      "verified": true
+    }
+  }
+}
+
+2. Update Profile Information
+PUT /account/profile
+Request Body:
+{
+  "firstName": "John",
+  "lastName": "Doe"
+}
+Response:
+{
+  "success": true,
+  "message": "Profile updated successfully"
+}
+
+3. Change Password
+PUT /account/password
+Request Body:
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newPassword123"
+}
+Response:
+{
+  "success": true,
+  "message": "Password changed successfully"
+}
+
+4. Send OTP for Mobile Change
+POST /account/mobile-change-otp
+Request Body:
+{
+  "newMobile": "09876543210"
+}
+Response:
+{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "xyz789uvw456"
+}
+
+5. Verify OTP and Change Mobile
+PUT /account/mobile
+Request Body:
+{
+  "newMobile": "09876543210",
+  "otp": "654321",
+  "otpId": "xyz789uvw456"
+}
+Response:
+{
+  "success": true,
+  "message": "Mobile number changed successfully"
+}
+
+Wallet APIs
+1. Get Wallet Information
+GET /wallet
+Response:
+{
+  "success": true,
+  "data": {
+    "balance": 50000,
+    "pricing": {
+      "englishSubtitle": 10000,
+      "persianDubbing": 25000,
+      "persianDubbingAndSubtitle": 30000
+    }
+  }
+}
+
+2. Initiate Payment
+POST /wallet/payment
+Request Body:
+{
+  "amount": 10000
+}
+Response:
+{
+  "success": true,
+  "message": "Payment initiated",
+  "paymentId": "pay123456",
+  "redirectUrl": "https://shaparak.ir/payment/pay123456"
+}
+
+3. Verify Payment
+POST /wallet/payment/verify
+Request Body:
+{
+  "paymentId": "pay123456",
+  "authority": "123456789",
+  "status": "OK"
+}
+Response:
+{
+  "success": true,
+  "message": "Payment verified successfully",
+  "newBalance": 60000
+}
+
+Translate APIs
+1. Upload Video
+POST /translate/upload
+Request Body (multipart/form-data):
+video: [file]
+Response:
+{
+  "success": true,
+  "message": "Video uploaded successfully",
+  "videoId": "vid123456",
+  "originalName": "my_video.mp4",
+  "size": 52428800,
+  "duration": 120
+}
+
+2. Get Translation Options and Pricing
+POST /translate/options
+Request Body:
+{
+  "videoId": "vid123456"
+}
+Response:
+{
+  "success": true,
+  "data": {
+    "options": [
+      {
+        "id": "english_subtitle",
+        "name": "English Subtitle",
+        "price": 10000
+      },
+      {
+        "id": "persian_dubbing",
+        "name": "Persian Dubbing",
+        "price": 25000
+      },
+      {
+        "id": "persian_dubbing_and_subtitle",
+        "name": "Persian Dubbing and Subtitle",
+        "price": 30000
+      }
+    ]
+  }
+}
+
+3. Start Translation Process
+POST /translate/start
+Request Body:
+{
+  "videoId": "vid123456",
+  "optionId": "persian_dubbing",
+  "useWalletBalance": true
+}
+Response:
+{
+  "success": true,
+  "message": "Translation process started",
+  "projectId": "proj789",
+  "estimatedTime": "30 minutes"
+}
+
+4. Get Translation Status
+GET /translate/status/{projectId}
+Response:
+{
+  "success": true,
+  "data": {
+    "projectId": "proj789",
+    "status": "processing",
+    "progress": 65,
+    "estimatedTimeRemaining": "10 minutes"
+  }
+}
+
+5. Get Download URL
+GET /translate/download/{projectId}
+Response:
+{
+  "success": true,
+  "data": {
+    "downloadUrl": "https://api.example.com/v1/translate/download/proj789/file",
+    "expiresAt": "2023-05-20T12:00:00Z"
+  }
+}
+
+6. Download File
+GET /translate/download/{projectId}/file
+Response:
+Binary file data with appropriate headers
+
+Error Responses
+All APIs should return appropriate error responses:
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input data",
+    "details": {
+      "field": "mobile",
+      "issue": "Mobile number format is invalid"
+    }
+  }
+}

@@ -1,0 +1,713 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Video Translation Service{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Mobile Header -->
+    <header class="mobile-header">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i data-feather="menu"></i>
+        </button>
+        <div class="mobile-brand mx-auto">
+            <a href="{{ url_for('dashboard.index') }}">
+                <img src="{{ url_for('static', filename='img/capati.png') }}" alt="Capati" style="height: 30px; width: auto;">
+            </a>
+        </div>
+        <div class="mobile-user-info">
+            <div class="mobile-credits">{{ "{:,}".format(context.dashboard_data.balance * 1000) }} تومان</div>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-content">
+            <!-- Logo -->
+            <div class="sidebar-header" style="display: flex; justify-content: center; padding: 1.5rem;">
+                <a href="{{ url_for('dashboard.index') }}" class="sidebar-brand">
+                    <img src="{{ url_for('static', filename='img/capati.png') }}" alt="Capati" style="height: 32px; width: auto;">
+                </a>
+            </div>
+
+            <!-- Navigation -->
+            <ul class="sidebar-nav">
+                <li class="nav-item active">
+                    <a href="#dashboard" class="nav-link" data-section="dashboard">
+                        <span style="display: inline-flex; padding-left: 0; padding-right: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </span>
+                        <span>داشبورد</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#translate" class="nav-link" data-section="translate">
+                        <span style="display: inline-flex; padding-left: 0; padding-right: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                        </span>
+                        <span>ترجمه ویدئو</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#wallet" class="nav-link" data-section="wallet">
+                        <span style="display: inline-flex; padding-left: 0; padding-right: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                        </span>
+                        <span>کیف پول</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#account" class="nav-link" data-section="account">
+                        <span style="display: inline-flex; padding-left: 0; padding-right: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </span>
+                        <span>حساب کاربری</span>
+                    </a>
+                </li>
+                {% if context.dashboard_data.profile.is_admin %}
+                <li class="nav-item">
+                    <a href="{{ url_for('admin_dashboard') }}" class="nav-link">
+                        <span style="display: inline-flex; padding-left: 0; padding-right: 0.75rem;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                            </svg>
+                        </span>
+                        <span class="text-danger fw-bold">پنل مدیریت</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <!-- E-Namad Trust Seal -->
+            <div class="sidebar-enamad mt-auto mb-3 text-center">
+                <div id="dashboard-enamad-seal"></div>
+            </div>
+        </div>
+
+        <!-- User Info -->
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i data-feather="user"></i>
+                </div>
+                <div class="user-details">
+                    <div class="username">{{ context.dashboard_data.profile.username }}</div>
+                    <div class="credits">{{ "{:,}".format(context.dashboard_data.balance * 1000) }} تومان</div>
+                </div>
+            </div>
+            <a href="/api/logout" class="logout-btn">
+                <i data-feather="log-out"></i>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Section -->
+        <div class="content-section active" id="dashboard-section">
+            <div class="page-header">
+                <h1>داشبورد</h1>
+                <p class="text-muted">
+                    {% if context.dashboard_data.profile.firstName %}
+                        سلام {{ context.dashboard_data.profile.firstName }} عزیز
+                    {% else %}
+                        سلام کاربر عزیز
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="credit-card" class="text-primary"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ "{:,}".format(context.dashboard_data.balance * 1000) }}</div>
+                            <div class="stat-label">موجودی (تومان)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="video" class="text-success"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ context.dashboard_data.recentProjects|length }}</div>
+                            <div class="stat-label">پروژه‌های اخیر</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="clock" class="text-warning"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ context.dashboard_data.inProgressProjects|length }}</div>
+                            <div class="stat-label">در حال پردازش</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i data-feather="check-circle" class="text-success"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ context.dashboard_data.completedProjects|length }}</div>
+                            <div class="stat-label">تکمیل شده</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Jobs -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">پروژه‌های ترجمه اخیر</h5>
+                </div>
+                <div class="card-body">
+                    <!-- SMS Notification Alert -->
+                    <div class="alert alert-info alert-dismissible fade show mb-3" role="alert" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                        <div class="d-flex align-items-center">
+                            <div style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; margin-left: 15px; flex-shrink: 0;">
+                                <i data-feather="bell" style="width: 24px; height: 24px; margin: 0 !important;"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 16px;">🎉 اطلاع‌رسانی هوشمند فعال است!</strong>
+                                <div style="margin-top: 5px; font-size: 14px; opacity: 0.95;">
+                                    به محض اتمام ترجمه ویدیوی شما، از طریق پیامک به شما اطلاع‌رسانی خواهد شد.
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+
+                    {% if context.dashboard_data.recentProjects %}
+                        <div class="table-responsive">
+                            <table class="table" id="jobs-table" style="table-layout: fixed;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 35%;">ویدئو</th>
+                                        <th style="width: 12%;">عملیات</th>
+                                        <th style="width: 10%;">وضعیت</th>
+                                        <th style="width: 8%;">هزینه</th>
+                                        <th style="width: 8%;">تاریخ</th>
+                                        <th style="width: 12%;">عملیات‌ها</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in context.dashboard_data.recentProjects %}
+                                    <tr>
+                                        <td data-label="ویدئو">
+                                            <div class="video-name-cell">{{ job.original_filename }}</div>
+                                        </td>
+                                        <td data-label="عملیات">{{ context.operation_types[job.type] }}</td>
+                                        <td data-label="وضعیت">
+                                            {% if job.status == 'completed' %}
+                                                <span class="badge bg-success">تکمیل شده</span>
+                                            {% elif job.status == 'processing' %}
+                                                <span class="badge bg-warning">در حال پردازش</span>
+                                            {% elif job.status == 'failed' %}
+                                                <span class="badge bg-danger">ناموفق</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">در انتظار</span>
+                                            {% endif %}
+                                        </td>
+                                        <td data-label="هزینه">{{ "{:,}".format(job.price * 1000) }} تومان</td>
+                                        <td data-label="تاریخ">{{ job.created_at|jalali }}</td>
+                                        <td data-label="عملیات‌ها">
+                                            {% if job.status == 'completed' %}
+                                                <div class="btn-group" role="group">
+                                                    <a href="/api/translate/download/{{ job.id }}" class="btn btn-sm btn-primary">
+                                                        <i data-feather="download" style="width: 14px; height: 14px;"></i>
+                                                        دانلود
+                                                    </a>
+                                                    <!-- Rating button hidden as not supported -->
+                                                    <button class="btn btn-sm btn-outline-warning" style="display: none;" onclick="showRatingModal({{ job.id }}, '{{ job.original_filename }}', {{ job.user_rating if job.user_rating else 'null' }})">
+                                                        <i data-feather="star" style="width: 14px; height: 14px;"></i>
+                                                        {% if job.user_rating %}
+                                                            {{ job.user_rating }}
+                                                        {% else %}
+                                                            امتیاز
+                                                        {% endif %}
+                                                    </button>
+                                                </div>
+                                            {% elif job.status == 'processing' %}
+                                                <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                    <i data-feather="clock" style="width: 14px; height: 14px;"></i>
+                                                    در حال پردازش
+                                                </button>
+                                            {% else %}
+                                                <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                    {{ job.status.title() }}
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="video" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                            <h6>هنوز هیچ پروژه ترجمه‌ای ندارید</h6>
+                            <p class="text-muted">با آپلود اولین ویدیو خود شروع کنید</p>
+                            <button class="btn btn-primary" onclick="showSection('translate')">
+                                <i data-feather="upload" class="me-1"></i>
+                                آپلود ویدیو
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Translation Section -->
+        <div class="content-section" id="translate-section">
+            <div class="page-header">
+                <h1>پلتفرم ترجمه ویدیو</h1>
+                <p class="text-muted">ویدیوهای خود را آپلود کرده و به زبان‌های مختلف ترجمه کنید</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">آپلود ویدیو</h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Warning message about 48-hour deletion -->
+                            <div class="alert alert-warning mb-4">
+                                <i data-feather="alert-circle" class="me-2"></i>
+                                <strong>توجه:</strong> فایل‌های ترجمه شده پس از 48 ساعت (2 روز) به صورت خودکار حذف خواهند شد. لطفاً فایل‌های خود را قبل از این زمان دانلود کنید.
+                            </div>
+                            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                                <input type="hidden" name="duration" id="durationInput" value="">
+                                <input type="hidden" name="resolution" id="resolutionInput" value="">
+                                <!-- File Upload -->
+                                <div class="mb-4">
+                                    <label for="video_file" class="form-label">فایل ویدیو</label>
+                                    <div class="upload-area" id="uploadArea">
+                                        <input type="file" id="video_file" name="video_file" accept="video/*" required style="display: none;">
+                                        <div class="upload-content">
+                                            <i data-feather="upload-cloud" style="width: 48px; height: 48px;" class="text-primary mb-3"></i>
+                                            <h6>ویدیو خود را اینجا بکشید و رها کنید</h6>
+                                            <p class="text-muted mb-3">یا برای انتخاب فایل کلیک کنید</p>
+                                            <small class="text-muted">فرمت‌های پشتیبانی شده: MP4, AVI, MOV, MKV, WMV, FLV, WEBM</small>
+                                        </div>
+                                    </div>
+                                    <div id="fileInfo" class="mt-3" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <div class="d-flex align-items-center">
+                                                <i data-feather="video" class="me-2"></i>
+                                                <div class="flex-grow-1">
+                                                    <strong id="fileName"></strong>
+                                                    <div class="small text-muted" id="fileSize"></div>
+                                                    <div id="durationLoading" class="small text-muted">
+                                                        <i data-feather="loader" class="spinner me-1" style="width: 14px; height: 14px;"></i>
+                                                        در حال تحلیل طول ویدیو...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- Operation Type -->
+                                <div class="mb-4">
+                                    <label class="form-label">نوع ترجمه</label>
+                                    <div class="operation-types">
+                                        {% for code, name in context.operation_types.items() %}
+                                        <div class="operation-card">
+                                            <input type="radio" class="form-check-input" id="{{ code }}" name="operation_type" value="{{ code }}" required>
+                                            <label class="operation-label" for="{{ code }}">
+                                                <div class="operation-content">
+                                                    <div class="operation-name">{{ name }}</div>
+                                                    <div class="operation-description">
+                                                        {% if code == 'english_subtitle' %}
+                                                            تولید زیرنویس انگلیسی برای ویدیو شما
+                                                        {% elif code == 'persian_subtitle' %}
+                                                            تولید زیرنویس فارسی برای ویدیو شما
+                                                        {% elif code == 'persian_dubbing' %}
+                                                            جایگزینی صدا با صدای هوش مصنوعی فارسی
+                                                        {% elif code == 'persian_dubbing_english_subtitle' %}
+                                                            دوبله فارسی همراه با زیرنویس انگلیسی
+                                                        {% elif code == 'persian_dubbing_persian_subtitle' %}
+                                                            دوبله فارسی همراه با زیرنویس فارسی
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="operation-cost">
+                                                        <span class="base-cost" data-operation="{{ code }}">
+                                                            {% if code == 'english_subtitle' %}۳,۰۰۰
+                                                            {% elif code == 'persian_subtitle' %}۴,۰۰۰
+                                                            {% elif code == 'persian_dubbing' %}۵,۰۰۰
+                                                            {% elif code == 'persian_dubbing_english_subtitle' %}۶,۰۰۰
+                                                            {% elif code == 'persian_dubbing_persian_subtitle' %}۶,۰۰۰
+                                                            {% endif %}
+                                                        </span> تومان/دقیقه
+                                                        <div class="quality-note text-muted small">برای ≤720p</div>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i data-feather="play" class="me-1"></i>
+                                    شروع ترجمه
+                                </button>
+
+                                <!-- Upload Progress -->
+                                <div id="uploadProgress" class="mt-3" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <h6 class="mb-2">در حال آپلود ویدیو...</h6>
+                                        <div class="progress" style="height: 25px;">
+                                            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
+                                        </div>
+                                        <small class="text-muted mt-2 d-block" id="uploadStatus">در حال آماده‌سازی...</small>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cost Preview -->
+                <div class="col-lg-4">
+                    <div class="card sticky-top">
+                        <div class="card-header">
+                            <h5 class="mb-0">برآورد هزینه</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="costPreview" style="display: none;">
+                                <div class="cost-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>مدت:</span>
+                                        <span id="videoDuration">-</span>
+                                    </div>
+                                </div>
+                                <div class="cost-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>کیفیت:</span>
+                                        <span id="videoResolution">در حال تشخیص...</span>
+                                    </div>
+                                </div>
+                                <div class="cost-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>عملیات:</span>
+                                        <span id="selectedOperation">-</span>
+                                    </div>
+                                </div>
+                                <hr>
+                                <div class="cost-total">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>هزینه کل:</strong>
+                                        <strong id="totalCost">- تومان</strong>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between text-muted">
+                                        <span>موجودی شما:</span>
+                                        <span>{{ "{:,}".format(context.dashboard_data.balance * 1000) }} تومان</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>پس از پردازش:</span>
+                                        <span id="remainingCredits">- تومان</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="costPlaceholder">
+                                <div class="text-center text-muted">
+                                    <i data-feather="dollar-sign" style="width: 32px; height: 32px;" class="mb-2"></i>
+                                    <p>ویدیو آپلود کنید تا برآورد هزینه را ببینید</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wallet Section -->
+        <div class="content-section" id="wallet-section">
+            <div class="page-header">
+                <h1>کیف پول</h1>
+                <p class="text-muted">اعتبارات و صورتحساب خود را مدیریت کنید</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">موجودی اعتبار</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="credit-balance-display">
+                                <div class="balance-amount">
+                                    <span class="balance-number">{{ "{:,}".format(context.dashboard_data.balance * 1000) }}</span>
+                                    <span class="balance-label">تومان موجود</span>
+                                </div>
+                                <div class="balance-actions">
+                                    <button class="btn btn-primary" onclick="scrollToCreditForm()">افزایش موجودی</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">قیمت‌گذاری</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="pricing-table">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>انواع ترجمه (کیفیت استاندارد 720p)</h6>
+                                        <ul class="list-unstyled">
+                                            <li class="d-flex justify-content-between">
+                                                <span>زیرنویس انگلیسی</span>
+                                                <span>۳,۰۰۰ تومان/دقیقه</span>
+                                            </li>
+                                            <li class="d-flex justify-content-between">
+                                                <span>زیرنویس فارسی</span>
+                                                <span>۴,۰۰۰ تومان/دقیقه</span>
+                                            </li>
+                                            <li class="d-flex justify-content-between">
+                                                <span>دوبله فارسی</span>
+                                                <span>۵,۰۰۰ تومان/دقیقه</span>
+                                            </li>
+                                            <li class="d-flex justify-content-between">
+                                                <span>دوبله فارسی و زیرنویس انگلیسی</span>
+                                                <span>۶,۰۰۰ تومان/دقیقه</span>
+                                            </li>
+                                            <li class="d-flex justify-content-between">
+                                                <span>دوبله فارسی و زیرنویس فارسی</span>
+                                                <span>۶,۰۰۰ تومان/دقیقه</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>سیاست قیمت‌گذاری</h6>
+                                        <div class="info-text">
+                                            <p class="mb-2"><strong>• محاسبه براساس کیفیت:</strong></p>
+                                            <p class="mb-1 ms-3">- کیفیت SD (480p): نرخ پایه</p>
+                                            <p class="mb-1 ms-3">- کیفیت HD (720p): نرخ پایه</p>
+                                            <p class="mb-1 ms-3">- کیفیت Full HD (1080p): نرخ پایه × 1.5</p>
+                                            <p class="mb-1 ms-3">- کیفیت 4K (2160p): نرخ پایه × 2</p>
+                                            <p class="mb-2">• حداقل ۱ دقیقه برای هر ویدیو محاسبه می‌شود</p>
+                                            <p class="mb-2">• موجودی بدون محدودیت زمانی است</p>
+                                            <p class="mb-0">• پرداخت از طریق درگاه‌های بانکی ایران</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-4" id="creditPackagesSection">
+                        <div class="card-header">
+                            <h5 class="mb-0">شارژ حساب</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row justify-content-center">
+                                <div class="col-md-8 col-lg-6">
+                                    <form method="POST" id="customAmountForm">
+                                        <div class="mb-4">
+                                            <label for="chargeAmount" class="form-label">مبلغ شارژ (تومان)</label>
+                                            <input type="number" class="form-control form-control-lg text-center"
+                                                   id="chargeAmount" name="amount_tomans"
+                                                   placeholder="مثال: 50000"
+                                                   min="1000" step="1000" required>
+                                            <div class="form-text">حداقل مبلغ شارژ: ۱,۰۰۰ تومان</div>
+                                        </div>
+
+                                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                                            <i data-feather="credit-card" class="me-2"></i>
+                                            پرداخت و شارژ حساب
+                                        </button>
+                                    </form>
+
+                                    <div class="mt-4 text-center">
+                                        <p class="text-muted mb-2">پرداخت امن از طریق درگاه‌های بانکی معتبر</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Section -->
+        <div class="content-section" id="account-section">
+            <div class="page-header">
+                <h1>حساب کاربری</h1>
+                <p class="text-muted">پروفایل و تنظیمات خود را مدیریت کنید</p>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- User Statistics -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">آمار حساب کاربری</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <strong>موجودی فعلی:</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    <span class="badge bg-primary fs-6">{{ "{:,}".format(context.dashboard_data.statistics.currentBalance * 1000) }} تومان</span>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <strong>تاریخ عضویت:</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    <span>{{ context.dashboard_data.statistics.joinDate|jalali_date }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">اطلاعات پروفایل</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="profileForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="first_name" class="form-label">نام</label>
+                                            <input type="text" class="form-control" id="first_name" name="first_name"
+                                                   value="{{ context.dashboard_data.profile.firstName or '' }}" placeholder="نام خود را وارد کنید">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="last_name" class="form-label">نام خانوادگی</label>
+                                            <input type="text" class="form-control" id="last_name" name="last_name"
+                                                   value="{{ context.dashboard_data.profile.lastName or '' }}" placeholder="نام خانوادگی خود را وارد کنید">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="updateProfile()">
+                                    <i data-feather="save"></i>
+                                    ذخیره تغییرات
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Settings -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">تنظیمات پیشرفته</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <strong>شماره موبایل:</strong>
+                                </div>
+                                <div class="col-md-9">
+                                    {{ context.dashboard_data.advancedSettings.mobile }}
+                                    {% if context.dashboard_data.advancedSettings.verified %}
+                                        <span class="badge bg-success">تایید شده</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">تایید نشده</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Change Password -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">تغییر رمز عبور</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="changePasswordForm">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="mb-3">
+                                            <label for="current_password" class="form-label">رمز عبور فعلی</label>
+                                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="new_password" class="form-label">رمز عبور جدید</label>
+                                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                            <div class="form-text">رمز عبور باید حداقل 8 کاراکتر باشد</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="confirm_password" class="form-label">تکرار رمز عبور جدید</label>
+                                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="changePassword()">
+                                    <i data-feather="lock"></i>
+                                    تغییر رمز عبور
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+    // Set eNamad seal based on domain
+    const hostname = window.location.hostname;
+    const enamadContainer = document.getElementById('dashboard-enamad-seal');
+
+    if (enamadContainer) {
+        if (hostname === 'cappati.ir' || hostname === 'www.cappati.ir') {
+            enamadContainer.innerHTML = '<a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL" alt="" style="cursor:pointer" code="FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"></a>';
+        } else if (hostname === 'capati.app' || hostname === 'www.capati.app') {
+            enamadContainer.innerHTML = '<a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=638131&Code=GLfUYMkU1p9XHFzfBYngQN9LTnv04zfb"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=638131&Code=GLfUYMkU1p9XHFzfBYngQN9LTnv04zfb" alt="" style="cursor:pointer" code="GLfUYMkU1p9XHFzfBYngQN9LTnv04zfb"></a>';
+        } else {
+            // For development or other domains, show cappati.ir version as default
+            enamadContainer.innerHTML = '<a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL" alt="" style="cursor:pointer" code="FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"></a>';
+        }
+    }
+</script>
+{% endblock %}

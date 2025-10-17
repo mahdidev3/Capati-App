@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}ورود - کاپاتی{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <div class="col-lg-6 d-flex align-items-center">
+                <div class="auth-form-container w-100">
+                    <div class="text-center mb-4" style="width: 100%; max-width: 450px; margin: 0 auto;">
+                        <a href="{{ url_for('dashboard.index') }}" class="navbar-brand fw-bold fs-3">
+                            <img src="{{ url_for('static', filename='img/capati.png') }}" alt="Capati" style="height: 40px; width: auto;">
+                        </a>
+                    </div>
+                    
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <h2 class="text-center mb-4">خوش آمدید</h2>
+                            
+                            <!-- Login with Password Form -->
+                            <form id="loginForm" method="POST">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">شماره موبایل</label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="password" class="form-label">رمز عبور</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100 mb-3">
+                                    ورود
+                                </button>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="text-center">
+                                <p class="mb-2">روش دیگر ورود:</p>
+                                <button id="loginWithOtpBtn" class="btn btn-outline-secondary btn-sm">
+                                    <i data-feather="phone" class="me-1"></i>
+                                    ورود با رمز یکبار مصرف
+                                </button>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <p class="mb-0">حساب کاربری ندارید؟ 
+                                    <a href="{{ url_for('auth.register') }}" class="text-primary text-decoration-none">
+                                        ایجاد حساب
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 d-none d-lg-block auth-image-section">
+                <div class="h-100 d-flex align-items-center justify-content-center">
+                    <div class="text-center text-white">
+                        <i data-feather="globe" style="width: 80px; height: 80px;" class="mb-4"></i>
+                        <h3 class="fw-bold mb-3">با مخاطبان جهانی ارتباط برقرار کنید</h3>
+                        <p class="lead">موانع زبانی را بشکنید و با پلتفرم کاپاتی به بینندگان در سراسر جهان دسترسی پیدا کنید.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OTP Login Modal -->
+<div class="modal fade" id="otpLoginModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">ورود با رمز یکبار مصرف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="otpRequestForm">
+                    <p>لطفاً شماره موبایل خود را وارد کنید تا کد تایید برای شما ارسال شود:</p>
+                    <div class="mb-3">
+                        <label for="otpMobile" class="form-label">شماره موبایل</label>
+                        <input type="text" class="form-control" id="otpMobile" placeholder="09xxxxxxxxx">
+                    </div>
+                    <button id="sendOtpBtn" class="btn btn-primary w-100">ارسال کد تایید</button>
+                </div>
+                
+                <div id="otpVerifyForm" style="display: none;">
+                    <p>کد تایید ارسال شده به شماره <strong id="otpMobileDisplay"></strong> را وارد کنید:</p>
+                    <div class="mb-3">
+                        <label for="otpCode" class="form-label">کد تایید</label>
+                        <input type="text" class="form-control" id="otpCode" placeholder="------">
+                        <input type="hidden" id="otpId">
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button id="verifyOtpBtn" class="btn btn-primary">تایید و ورود</button>
+                        <button id="resendOtpBtn" class="btn btn-outline-secondary">ارسال مجدد کد</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}

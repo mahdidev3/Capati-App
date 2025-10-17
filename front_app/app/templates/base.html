@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}کاپاتی{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/CL.png') }}">
+
+    <!-- Google tag (gtag.js) - Exclude from admin pages -->
+    {% if not request.endpoint or not request.endpoint.startswith('admin_') %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17509642238"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-17509642238');
+    </script>
+    {% endif %}
+
+    <!-- Persian Font -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+
+    <!-- Ravi Font Family -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='fonts/ravi-fonts.css') }}">
+
+    <!-- Bootstrap CSS RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show auto-dismiss" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+
+    <!-- Footer - Only show for non-authenticated users -->
+    {% if not context.is_authenticated %}
+    <footer class="footer mt-auto py-4 bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="mb-3">
+                        <a href="{{ url_for('dashboard.index') }}">
+                            <img src="{{ url_for('static', filename='img/capati.png') }}" alt="Capati" style="height: 25px; width: auto;">
+                        </a>
+                    </h5>
+                    <p class="small">راه‌حل حرفه‌ای برای ترجمه و دوبله ویدیوهای شما</p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">تماس با ما</h5>
+                    <p class="small mb-2">
+                        <i data-feather="map-pin" style="width: 16px; height: 16px;"></i>
+                        اصفهان - شهرستان : اصفهان - بخش : مرکزی - شهر : اصفهان - محله : جی شیر - کوچه نیایش - بن بست اردیبهشت - پلاک : 12.0 - طبقه : 1
+                    </p>
+                    <p class="small">
+                        <i data-feather="phone" style="width: 16px; height: 16px;"></i>
+                        تلفن: <a href="tel:09398022288" class="text-white">03133916929</a>
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">لینک‌های مفید</h5>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="{{ url_for('dashboard.index') }}" class="text-white text-decoration-none">صفحه اصلی</a></li>
+                        <li class="mb-2"><a href="{{ url_for('pages.contact') }}" class="text-white text-decoration-none">تماس با ما</a></li>
+                        {% if context.is_authenticated %}
+                        <li class="mb-2"><a href="{{ url_for('dashboard.index') }}" class="text-white text-decoration-none">داشبورد</a></li>
+                        {% else %}
+                        <li class="mb-2"><a href="{{ url_for('auth.login') }}" class="text-white text-decoration-none">ورود</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4 bg-white">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="small mb-0">© 2025 کاپاتی. تمامی حقوق محفوظ است.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <!-- eNamad Trust Seal -->
+                    <div id="enamad-seal"></div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/base.js') }}"></script>
+    <script>
+        // Set eNamad seal based on domain
+        const hostname = window.location.hostname;
+        const enamadContainer = document.getElementById('enamad-seal');
+
+        if (enamadContainer) {
+            if (hostname === 'cappati.ir' || hostname === 'www.cappati.ir') {
+                enamadContainer.innerHTML = '<a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL" alt="" style="cursor:pointer" code="FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"></a>';
+            } else if (hostname === 'capati.app' || hostname === 'www.capati.app') {
+                enamadContainer.innerHTML = '<a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=638131&Code=GLfUYMkU1p9XHFzfBYngQN9LTnv04zfb"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=638131&Code=GLfUYMkU1p9XHFzfBYngQN9LTnv04zfb" alt="" style="cursor:pointer" code="GLfUYMkU1p9XHFzfBYngQN9LTnv04zfb"></a>';
+            } else {
+                // For development or other domains, show cappati.ir version as default
+                enamadContainer.innerHTML = '<a referrerpolicy="origin" target="_blank" href="https://trustseal.enamad.ir/?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"><img referrerpolicy="origin" src="https://trustseal.enamad.ir/logo.aspx?id=636839&Code=FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL" alt="" style="cursor:pointer" code="FSnUtW1TzgZXKyGfVCMGip3hRBOWzdxL"></a>';
+            }
+        }
+
+        // Initialize Feather icons ONLY ONCE
+        if (!window.featherInitialized) {
+            feather.replace();
+            window.featherInitialized = true;
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

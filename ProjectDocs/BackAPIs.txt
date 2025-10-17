@@ -1,0 +1,544 @@
+API Design for Translation Service Platform Backend
+
+Base URL
+http://localhost/v1 # for development
+
+Backend Logic Overview
+- All endpoints require proper authentication (except signup/login OTP requests).
+- Authentication uses JWT tokens stored in HttpOnly cookies.
+- Input validation is performed for all requests (e.g., mobile number format, OTP validity).
+- Responses follow a consistent structure: { "success": boolean, "message": string, ... }.
+- Error handling returns detailed error objects with codes and details.
+- Database interactions are assumed for user, wallet, and project data.
+- File uploads are handled with multipart/form-data for video translations.
+
+Authentication APIs
+1. Send OTP for Login
+POST /auth/login-otp
+
+Request Body:
+{
+  "mobile": "09123456789"
+}
+
+Logic:
+- Validate mobile number format (e.g., 11 digits, starts with "09").
+- Generate a 6-digit OTP and store it with an otpId in the database.
+- Send OTP via SMS (external service integration).
+- Return otpId for verification.
+
+Response:
+{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "abc123def456"
+}
+
+2. Login with OTP
+POST /auth/login-otp-verify
+
+Request Body:
+{
+  "mobile": "09123456789",
+  "otp": "123456",
+  "otpId": "abc123def456"
+}
+
+Logic:
+- Validate mobile, OTP, and otpId against database records.
+- If valid, generate a JWT token with user ID and mobile.
+- Store token in HttpOnly cookie with 1-year expiry.
+- Return user data and token.
+
+Response:
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "mobile": "09123456789"
+  }
+}
+Headers:
+Set-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000
+
+3. Login with Password
+POST /auth/login-password
+
+Request Body:
+{
+  "mobile": "09123456789",
+  "password": "securePassword123"
+}
+
+Logic:
+- Validate mobile number and password.
+- Check password hash against stored hash in database.
+- If valid, generate JWT token and store in HttpOnly cookie.
+- Return user data and token.
+
+Response:
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "mobile": "09123456789"
+  }
+}
+Headers:
+Set-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000
+
+4. Send OTP for Signup
+POST /auth/signup-otp
+
+Request Body:
+{
+  "mobile": "09123456789"
+}
+
+Logic:
+- Validate mobile number format.
+- Check if mobile is already registered.
+- Generate OTP and otpId, store in database.
+- Send OTP via SMS.
+
+Response:
+{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "abc123def456"
+}
+
+5. Verify OTP and Complete Signup
+POST /auth/signup-complete
+
+Request Body:
+{
+  "mobile": "09123456789",
+  "otp": "123456",
+  "otpId": "abc123def456",
+  "password": "securePassword123"
+}
+
+Logic:
+- Validate mobile, OTP, and otpId.
+- Hash password and create new user in database.
+- Generate JWT token and store in HttpOnly cookie.
+- Return user data and token.
+
+Response:
+{
+  "success": true,
+  "message": "Account created successfully",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "mobile": "09123456789"
+  }
+}
+Headers:
+Set-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000
+
+6. Logout
+POST /auth/logout
+
+Logic:
+- Invalidate JWT token by clearing the auth_token cookie.
+- Return success message.
+
+Response:
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+Headers:
+Set-Cookie: auth_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0
+
+Dashboard APIs
+1. Get Dashboard Data
+GET /dashboard
+
+Logic:
+- Authenticate request using JWT token from cookie.
+- Fetch user’s balance, recent projects, in-progress projects, and completed projects from database.
+- Return aggregated data.
+
+Response:
+{
+  "success": true,
+  "data": {
+    "balance": 50000,
+    "recentProjects": [
+      {
+        "id": "proj1",
+        "name": "Video Translation 1",
+        "type": "English Subtitle",
+        "status": "completed",
+        "createdAt": "2023-05-15T10:30:00Z",
+        "completedAt": "2023-05-16T14:20:00Z"
+      },
+      {
+        "id": "proj2",
+        "name": "Video Translation 2",
+        "type": "Persian Dubbing",
+        "status": "processing",
+        "createdAt": "2023-05-17T09:15:00Z"
+      }
+    ],
+    "inProgressProjects": [
+      {
+        "id": "proj2",
+        "name": "Video Translation 2",
+        "type": "Persian Dubbing",
+        "status": "processing",
+        "createdAt": "2023-05-17T09:15:00Z",
+        "progress": 65
+      }
+    ],
+    "completedProjects": [
+      {
+        "id": "proj1",
+        "name": "Video Translation 1",
+        "type": "English Subtitle",
+        "status": "completed",
+        "createdAt": "2023-05-15T10:30:00Z",
+        "completedAt": "2023-05-16T14:20:00Z"
+      }
+    ]
+  }
+}
+
+Account APIs
+1. Get Account Information
+GET /account
+
+Logic:
+- Authenticate using JWT token.
+- Fetch user profile, statistics, and settings from database.
+- Return combined data.
+
+Response:
+{
+  "success": true,
+  "data": {
+    "statistics": {
+      "currentBalance": 50000,
+      "joinDate": "2023-01-10T00:00:00Z"
+    },
+    "profile": {
+      "firstName": "John",
+      "lastName": "Doe"
+    },
+    "advancedSettings": {
+      "mobile": "09123456789",
+      "verified": true
+    }
+  }
+}
+
+2. Update Profile Information
+PUT /account/profile
+
+Request Body:
+{
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+Logic:
+- Authenticate using JWT token.
+- Validate input fields.
+- Update user profile in database.
+- Return success message.
+
+Response:
+{
+  "success": true,
+  "message": "Profile updated successfully"
+}
+
+3. Change Password
+PUT /account/password
+
+Request Body:
+{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newPassword123"
+}
+
+Logic:
+- Authenticate using JWT token.
+- Validate current password against stored hash.
+- Hash new password and update in database.
+- Return success message.
+
+Response:
+{
+  "success": true,
+  "message": "Password changed successfully"
+}
+
+4. Send OTP for Mobile Change
+POST /account/mobile-change-otp
+
+Request Body:
+{
+  "newMobile": "09876543210"
+}
+
+Logic:
+- Authenticate using JWT token.
+- Validate new mobile number format.
+- Generate OTP and otpId, store in database.
+- Send OTP via SMS.
+
+Response:
+{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "xyz789uvw456"
+}
+
+5. Verify OTP and Change Mobile
+PUT /account/mobile
+
+Request Body:
+{
+  "newMobile": "09876543210",
+  "otp": "654321",
+  "otpId": "xyz789uvw456"
+}
+
+Logic:
+- Authenticate using JWT token.
+- Validate OTP and otpId.
+- Update user’s mobile number in database.
+- Return success message.
+
+Response:
+{
+  "success": true,
+  "message": "Mobile number changed successfully"
+}
+
+Wallet APIs
+1. Get Wallet Information
+GET /wallet
+
+Logic:
+- Authenticate using JWT token.
+- Fetch user’s balance and pricing details from database.
+- Return combined data.
+
+Response:
+{
+  "success": true,
+  "data": {
+    "balance": 50000,
+    "pricing": {
+      "englishSubtitle": 10000,
+      "persianDubbing": 25000,
+      "persianDubbingAndSubtitle": 30000
+    }
+  }
+}
+
+2. Initiate Payment
+POST /wallet/payment
+
+Request Body:
+{
+  "amount": 10000
+}
+
+Logic:
+- Authenticate using JWT token.
+- Validate amount (e.g., positive number).
+- Create payment request with external payment gateway.
+- Store paymentId in database.
+- Return payment details with redirect URL.
+
+Response:
+{
+  "success": true,
+  "message": "Payment initiated",
+  "paymentId": "pay123456",
+  "redirectUrl": "https://shaparak.ir/payment/pay123456"
+}
+
+3. Verify Payment
+POST /wallet/payment/verify
+
+Request Body:
+{
+  "paymentId": "pay123456",
+  "authority": "123456789",
+  "status": "OK"
+}
+
+Logic:
+- Validate paymentId and authority with payment gateway.
+- If status is "OK", update user’s balance in database.
+- Return new balance.
+
+Response:
+{
+  "success": true,
+  "message": "Payment verified successfully",
+  "newBalance": 60000
+}
+
+Translate APIs
+1. Upload Video
+POST /translate/upload
+
+Request Body (multipart/form-data):
+video: [file]
+
+Logic:
+- Authenticate using JWT token.
+- Validate file type (e.g., mp4) and size.
+- Store video in server storage (e.g., S3 or local).
+- Save video metadata (ID, name, size, duration) in database.
+- Return video details.
+
+Response:
+{
+  "success": true,
+  "message": "Video uploaded successfully",
+  "videoId": "vid123456",
+  "originalName": "my_video.mp4",
+  "size": 52428800,
+  "duration": 120
+}
+
+2. Get Translation Options and Pricing
+POST /translate/options
+
+Request Body:
+{
+  "videoId": "vid123456"
+}
+
+Logic:
+- Authenticate using JWT token.
+- Validate videoId exists in database.
+- Fetch available translation options and their prices.
+- Return options list.
+
+Response:
+{
+  "success": true,
+  "data": {
+    "options": [
+      {
+        "id": "english_subtitle",
+        "name": "English Subtitle",
+        "price": 10000
+      },
+      {
+        "id": "persian_dubbing",
+        "name": "Persian Dubbing",
+        "price": 25000
+      },
+      {
+        "id": "persian_dubbing_and_subtitle",
+        "name": "Persian Dubbing and Subtitle",
+        "price": 30000
+      }
+    ]
+  }
+}
+
+3. Start Translation Process
+POST /translate/start
+
+Request Body:
+{
+  "videoId": "vid123456",
+  "optionId": "persian_dubbing",
+  "useWalletBalance": true
+}
+
+Logic:
+- Authenticate using JWT token.
+- Validate videoId and optionId.
+- Check if user has sufficient balance if useWalletBalance is true.
+- Deduct balance and create translation project in database.
+- Queue translation task (e.g., to a worker service).
+- Return project details.
+
+Response:
+{
+  "success": true,
+  "message": "Translation process started",
+  "projectId": "proj789",
+  "estimatedTime": "30 minutes"
+}
+
+4. Get Translation Status
+GET /translate/status/{projectId}
+
+Logic:
+- Authenticate using JWT token.
+- Validate projectId and user authorization.
+- Fetch project status and progress from database or worker service.
+- Return status details.
+
+Response:
+{
+  "success": true,
+  "data": {
+    "projectId": "proj789",
+    "status": "processing",
+    "progress": 65,
+    "estimatedTimeRemaining": "10 minutes"
+  }
+}
+
+5. Get Download URL
+GET /translate/download/{projectId}
+
+Logic:
+- Authenticate using JWT token.
+- Validate projectId and ensure project is completed.
+- Generate signed URL for downloading translated file.
+- Return URL with expiry.
+
+Response:
+{
+  "success": true,
+  "data": {
+    "downloadUrl": "http://localhost/v1/translate/download/proj789/file",
+    "expiresAt": "2023-05-20T12:00:00Z"
+  }
+}
+
+6. Download File
+GET /translate/download/{projectId}/file
+
+Logic:
+- Authenticate using JWT token.
+- Validate signed URL and projectId.
+- Stream file from storage (e.g., S3 or local).
+- Set appropriate content-type headers.
+
+Response:
+Binary file data with appropriate headers
+
+Error Responses
+All APIs return error responses for invalid inputs or failures:
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input data",
+    "details": {
+      "field": "mobile",
+      "issue": "Mobile number format is invalid"
+    }
+  }
+}

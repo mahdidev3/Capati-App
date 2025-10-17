@@ -1,0 +1,392 @@
+[1;34mAPI Design for Translation Service Platform[0m
+
+[1;33mBase URL[0m
+[36mhttps://api.example.com/v1[0m # for production
+[36mhttp://localhost/v1[0m # for development
+
+[1;33mAuthentication APIs[0m
+[1;32m1. Send OTP for Login[0m
+[35mPOST /auth/login-otp[0m
+
+Request Body:
+[36m{
+  "mobile": "09123456789"
+}[0m
+
+Response:
+[36m{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "abc123def456"
+}[0m
+
+[1;32m2. Login with OTP[0m
+[35mPOST /auth/login-otp-verify[0m
+
+Request Body:
+[36m{
+  "mobile": "09123456789",
+  "otp": "123456",
+  "otpId": "abc123def456"
+}[0m
+
+Response:
+[36m{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "username": "john_doe",
+    "mobile": "09123456789"
+  }
+}[0m
+Headers:
+[36mSet-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000[0m
+
+[1;32m3. Login with Password[0m
+[35mPOST /auth/login-password[0m
+
+Request Body:
+[36m{
+  "mobile": "09123456789",
+  "password": "securePassword123"
+}[0m
+
+Response:
+[36m{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "username": "john_doe",
+    "mobile": "09123456789"
+  }
+}[0m
+Headers:
+[36mSet-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000[0m
+
+[1;32m4. Send OTP for Signup[0m
+[35mPOST /auth/signup-otp[0m
+
+Request Body:
+[36m{
+  "mobile": "09123456789"
+}[0m
+
+Response:
+[36m{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "abc123def456"
+}[0m
+
+[1;32m5. Verify OTP and Complete Signup[0m
+[35mPOST /auth/signup-complete[0m
+
+Request Body:
+[36m{
+  "mobile": "09123456789",
+  "otp": "123456",
+  "otpId": "abc123def456",
+  "username": "john_doe",
+  "password": "securePassword123"
+}[0m
+
+Response:
+[36m{
+  "success": true,
+  "message": "Account created successfully",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "user123",
+    "username": "john_doe",
+    "mobile": "09123456789"
+  }
+}[0m
+Headers:
+[36mSet-Cookie: auth_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; HttpOnly; Secure; SameSite=Strict; Max-Age=31536000[0m
+
+[1;32m6. Logout[0m
+[35mPOST /auth/logout[0m
+Response:
+[36m{
+  "success": true,
+  "message": "Logged out successfully"
+}[0m
+Headers:
+[36mSet-Cookie: auth_token=; HttpOnly; Secure; SameSite=Strict; Max-Age=0[0m
+
+[1;33mDashboard APIs[0m
+[1;32m1. Get Dashboard Data[0m
+[35mGET /dashboard[0m
+
+Response:
+[36m{
+  "success": true,
+  "data": {
+    "balance": 50000,
+    "recentProjects": [
+      {
+        "id": "proj1",
+        "name": "Video Translation 1",
+        "type": "English Subtitle",
+        "status": "completed",
+        "createdAt": "2023-05-15T10:30:00Z",
+        "completedAt": "2023-05-16T14:20:00Z"
+      },
+      {
+        "id": "proj2",
+        "name": "Video Translation 2",
+        "type": "Persian Dubbing",
+        "status": "processing",
+        "createdAt": "2023-05-17T09:15:00Z"
+      }
+    ],
+    "inProgressProjects": [
+      {
+        "id": "proj2",
+        "name": "Video Translation 2",
+        "type": "Persian Dubbing",
+        "status": "processing",
+        "createdAt": "2023-05-17T09:15:00Z",
+        "progress": 65
+      }
+    ],
+    "completedProjects": [
+      {
+        "id": "proj1",
+        "name": "Video Translation 1",
+        "type": "English Subtitle",
+        "status": "completed",
+        "createdAt": "2023-05-15T10:30:00Z",
+        "completedAt": "2023-05-16T14:20:00Z"
+      }
+    ]
+  }
+}[0m
+
+[1;33mAccount APIs[0m
+[1;32m1. Get Account Information[0m
+[35mGET /account[0m
+Response:
+[36m{
+  "success": true,
+  "data": {
+    "statistics": {
+      "currentBalance": 50000,
+      "joinDate": "2023-01-10T00:00:00Z"
+    },
+    "profile": {
+      "firstName": "John",
+      "lastName": "Doe"
+    },
+    "advancedSettings": {
+      "mobile": "09123456789",
+      "verified": true
+    }
+  }
+}[0m
+
+[1;32m2. Update Profile Information[0m
+[35mPUT /account/profile[0m
+Request Body:
+[36m{
+  "firstName": "John",
+  "lastName": "Doe"
+}[0m
+Response:
+[36m{
+  "success": true,
+  "message": "Profile updated successfully"
+}[0m
+
+[1;32m3. Change Password[0m
+[35mPUT /account/password[0m
+Request Body:
+[36m{
+  "currentPassword": "oldPassword123",
+  "newPassword": "newPassword123"
+}[0m
+Response:
+[36m{
+  "success": true,
+  "message": "Password changed successfully"
+}[0m
+
+[1;32m4. Send OTP for Mobile Change[0m
+[35mPOST /account/mobile-change-otp[0m
+Request Body:
+[36m{
+  "newMobile": "09876543210"
+}[0m
+Response:
+[36m{
+  "success": true,
+  "message": "OTP sent successfully",
+  "otpId": "xyz789uvw456"
+}[0m
+
+[1;32m5. Verify OTP and Change Mobile[0m
+[35mPUT /account/mobile[0m
+Request Body:
+[36m{
+  "newMobile": "09876543210",
+  "otp": "654321",
+  "otpId": "xyz789uvw456"
+}[0m
+Response:
+[36m{
+  "success": true,
+  "message": "Mobile number changed successfully"
+}[0m
+
+[1;33mWallet APIs[0m
+[1;32m1. Get Wallet Information[0m
+[35mGET /wallet[0m
+Response:
+[36m{
+  "success": true,
+  "data": {
+    "balance": 50000,
+    "pricing": {
+      "englishSubtitle": 10000,
+      "persianDubbing": 25000,
+      "persianDubbingAndSubtitle": 30000
+    }
+  }
+}[0m
+
+[1;32m2. Initiate Payment[0m
+[35mPOST /wallet/payment[0m
+Request Body:
+[36m{
+  "amount": 10000
+}[0m
+Response:
+[36m{
+  "success": true,
+  "message": "Payment initiated",
+  "paymentId": "pay123456",
+  "redirectUrl": "https://shaparak.ir/payment/pay123456"
+}[0m
+
+[1;32m3. Verify Payment[0m
+[35mPOST /wallet/payment/verify[0m
+Request Body:
+[36m{
+  "paymentId": "pay123456",
+  "authority": "123456789",
+  "status": "OK"
+}[0m
+Response:
+[36m{
+  "success": true,
+  "message": "Payment verified successfully",
+  "newBalance": 60000
+}[0m
+
+[1;33mTranslate APIs[0m
+[1;32m1. Upload Video[0m
+[35mPOST /translate/upload[0m
+Request Body (multipart/form-data):
+[36mvideo: [file][0m
+Response:
+[36m{
+  "success": true,
+  "message": "Video uploaded successfully",
+  "videoId": "vid123456",
+  "originalName": "my_video.mp4",
+  "size": 52428800,
+  "duration": 120
+}[0m
+
+[1;32m2. Get Translation Options and Pricing[0m
+[35mPOST /translate/options[0m
+Request Body:
+[36m{
+  "videoId": "vid123456"
+}[0m
+Response:
+[36m{
+  "success": true,
+  "data": {
+    "options": [
+      {
+        "id": "english_subtitle",
+        "name": "English Subtitle",
+        "price": 10000
+      },
+      {
+        "id": "persian_dubbing",
+        "name": "Persian Dubbing",
+        "price": 25000
+      },
+      {
+        "id": "persian_dubbing_and_subtitle",
+        "name": "Persian Dubbing and Subtitle",
+        "price": 30000
+      }
+    ]
+  }
+}[0m
+
+[1;32m3. Start Translation Process[0m
+[35mPOST /translate/start[0m
+Request Body:
+[36m{
+  "videoId": "vid123456",
+  "optionId": "persian_dubbing",
+  "useWalletBalance": true
+}[0m
+Response:
+[36m{
+  "success": true,
+  "message": "Translation process started",
+  "projectId": "proj789",
+  "estimatedTime": "30 minutes"
+}[0m
+
+[1;32m4. Get Translation Status[0m
+[35mGET /translate/status/{projectId}[0m
+Response:
+[36m{
+  "success": true,
+  "data": {
+    "projectId": "proj789",
+    "status": "processing",
+    "progress": 65,
+    "estimatedTimeRemaining": "10 minutes"
+  }
+}[0m
+
+[1;32m5. Get Download URL[0m
+[35mGET /translate/download/{projectId}[0m
+Response:
+[36m{
+  "success": true,
+  "data": {
+    "downloadUrl": "https://api.example.com/v1/translate/download/proj789/file",
+    "expiresAt": "2023-05-20T12:00:00Z"
+  }
+}[0m
+
+[1;32m6. Download File[0m
+[35mGET /translate/download/{projectId}/file[0m
+Response:
+[36mBinary file data with appropriate headers[0m
+
+[1;33mError Responses[0m
+All APIs should return appropriate error responses:
+[36m{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input data",
+    "details": {
+      "field": "mobile",
+      "issue": "Mobile number format is invalid"
+    }
+  }
+}[0m

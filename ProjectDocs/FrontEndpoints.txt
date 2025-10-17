@@ -1,0 +1,230 @@
+API Design for Translation Service Platform Frontend
+
+Base URL
+https://panel.capati.app # for production; use localhost for development if needed
+
+Frontend Logic Overview
+- The frontend uses server-side rendering (SSR) for initial page loads, delivering fully rendered HTML for two main pages: Login/Signup and Dashboard.
+- The Dashboard page (at "/") includes sub-sections for account, wallet, and translation functionalities, rendered server-side as a single page with distinct sections.
+- After initial SSR, client-side JavaScript handles updates and transactions by calling API endpoints (proxied to backend APIs from BackAPIs.txt).
+- Authentication is managed via cookies (proxied from backend JWT in HttpOnly cookies).
+- Server-side rendering fetches data from backend APIs to generate HTML
+- Client-side API calls (fetch/AJAX) handle dynamic updates and form submissions after initial load.
+- Input validation and error handling mirror backend where applicable.
+- File uploads are handled with multipart/form-data, proxied to backend.
+- Assume backend base URL is http://localhost/v1 for development; replace with production backend URL (e.g., https://api.capati.app/v1).
+
+Page Routes (Server-Side Rendered)
+These GET routes render full HTML pages server-side, fetching data from backend APIs.
+
+1. Login/Signup Page
+GET /login
+
+Logic:
+- Check auth_token cookie; if authenticated, redirect to /.
+- Render HTML with Login and Signup forms (mobile/OTP or password).
+- No backend API calls needed for initial render unless showing error states from prior actions.
+- Form submissions use client-side POST to API endpoints (e.g., /api/auth/login-otp).
+- Errors (from prior submissions) are passed to template for display.
+
+2. Dashboard Page
+GET /
+
+Logic:
+- Check auth_token cookie; if not authenticated, redirect to /login.
+- Fetch data from backend APIs:
+  - GET /dashboard for balance, recent/in-progress/completed projects.
+  - GET /account for user statistics, profile, and settings.
+  - GET /wallet for balance and pricing.
+- Render HTML with Dashboard sections:
+  - Account: profile info, forms for updating profile/password/mobile.
+  - Wallet: balance, payment initiation form.
+  - Translation: upload form, options, status, and download links.
+- Embed data (e.g., project lists, balance) into HTML template.
+- Include client-side JS for dynamic interactions (e.g., form submissions, status polling).
+- Handle errors by rendering error messages within the page or a dedicated error page.
+
+API Endpoints (for Client-Side Updates/Transactions)
+These are proxied endpoints that forward requests to backend APIs, returning JSON for client-side updates after initial SSR. Used for form submissions, dynamic updates, or AJAX/fetch calls.
+
+Authentication APIs (Proxied)
+1. Send OTP for Login
+POST /api/auth/login-otp
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /auth/login-otp.
+- Return JSON; client shows OTP input field in Login form.
+
+2. Login with OTP
+POST /api/auth/login-otp-verify
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /auth/login-otp-verify.
+- Forward cookie and response.
+- On success, client reloads to / (Dashboard) or updates UI.
+
+3. Login with Password
+POST /api/auth/login-password
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /auth/login-password.
+- Forward cookie and response.
+- On success, client reloads to /.
+
+4. Send OTP for Signup
+POST /api/auth/signup-otp
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /auth/signup-otp.
+- Return JSON; client shows OTP input in Signup form.
+
+5. Verify OTP and Complete Signup
+POST /api/auth/signup-complete
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /auth/signup-complete.
+- Forward cookie and response.
+- On success, client reloads to /.
+
+6. Logout
+POST /api/auth/logout
+
+Logic:
+- Proxy to backend POST /auth/logout.
+- Forward cookie clearance.
+- Client reloads to /login.
+
+Dashboard APIs (Proxied)
+1. Get Dashboard Data
+GET /api/dashboard
+
+Logic:
+- Proxy to backend GET /dashboard.
+- Return JSON; client updates Dashboard section (e.g., project lists, balance).
+
+Account APIs (Proxied)
+1. Get Account Information
+GET /api/account
+
+Logic:
+- Proxy to backend GET /account.
+- Return JSON; client updates Account section (e.g., profile, settings).
+
+2. Update Profile Information
+PUT /api/account/profile
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend PUT /account/profile.
+- Return JSON; client updates Account section or shows success/error.
+
+3. Change Password
+PUT /api/account/password
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend PUT /account/password.
+- Return JSON; client shows success/error message.
+
+4. Send OTP for Mobile Change
+POST /api/account/mobile-change-otp
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /account/mobile-change-otp.
+- Return JSON; client shows OTP input field.
+
+5. Verify OTP and Change Mobile
+PUT /api/account/mobile
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend PUT /account/mobile.
+- Return JSON; client updates Account section or shows success.
+
+Wallet APIs (Proxied)
+1. Get Wallet Information
+GET /api/wallet
+
+Logic:
+- Proxy to backend GET /wallet.
+- Return JSON; client updates Wallet section (e.g., balance, pricing).
+
+2. Initiate Payment
+POST /api/wallet/payment
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /wallet/payment.
+- Return JSON with redirectUrl; client redirects to payment gateway.
+
+3. Verify Payment
+POST /api/wallet/payment/verify
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /wallet/payment/verify.
+- Return JSON; client updates Wallet section (e.g., new balance).
+
+Translate APIs (Proxied)
+1. Upload Video
+POST /api/translate/upload
+
+Request Body: multipart/form-data, same as backend.
+Logic:
+- Proxy to backend POST /translate/upload.
+- Return JSON; client updates Translation section to show options.
+
+2. Get Translation Options and Pricing
+POST /api/translate/options
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /translate/options.
+- Return JSON; client renders options in Translation section.
+
+3. Start Translation Process
+POST /api/translate/start
+
+Request Body: Same as backend.
+Logic:
+- Proxy to backend POST /translate/start.
+- Return JSON; client updates to show Translation Status.
+
+4. Get Translation Status
+GET /api/translate/status/:projectId
+
+Logic:
+- Proxy to backend GET /translate/status/{projectId}.
+- Return JSON; client updates Translation Status (e.g., progress bar).
+
+5. Get Download URL
+GET /api/translate/download/:projectId
+
+Logic:
+- Proxy to backend GET /translate/download/{projectId}.
+- Return JSON; client shows download button or redirects.
+
+6. Download File
+GET /api/translate/download/:projectId/file
+
+Logic:
+- Proxy to backend GET /translate/download/{projectId}/file.
+- Stream binary response; client handles file download.
+
+Error Responses
+All API endpoints return error responses mirrored from backend:
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input data",
+    "details": { ... }
+  }
+}
+For SSR routes, errors are rendered as part of the HTML (e.g., error messages in forms or a dedicated error section). For client-side APIs, errors are returned as JSON and displayed in the UI (e.g., alerts).

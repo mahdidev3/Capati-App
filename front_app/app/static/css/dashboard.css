@@ -1,0 +1,133 @@
+/* Dashboard specific styles */
+.dashboard-layout {
+    display: flex;
+    min-height: 100vh;
+    background: var(--background);
+    position: relative;
+}
+
+/* Stats Cards */
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Jobs Table */
+#jobs-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#jobs-table th:first-child,
+#jobs-table td:first-child {
+    width: 35% !important;
+    max-width: 35% !important;
+    overflow: hidden;
+}
+
+/* Upload Area */
+.upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--background);
+}
+
+.upload-area:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.02);
+}
+
+.upload-area.dragover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+/* Operation Types */
+.operation-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.operation-card {
+    position: relative;
+}
+
+.operation-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.operation-label {
+    display: block;
+    padding: 1.5rem;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.operation-label:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
+}
+
+.operation-card input[type="radio"]:checked + .operation-label {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.02);
+}
+
+/* Cost Preview */
+.cost-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.cost-item:last-child {
+    border-bottom: none;
+}
+
+.cost-total {
+    background: var(--light-gray);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+/* Credit Balance */
+.credit-balance-display {
+    text-align: center;
+    padding: 2rem;
+}
+
+.balance-amount {
+    margin-bottom: 2rem;
+}
+
+.balance-number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary);
+    display: block;
+}
+
+.balance-label {
+    font-size: 1.125rem;
+    color: var(--muted);
+}

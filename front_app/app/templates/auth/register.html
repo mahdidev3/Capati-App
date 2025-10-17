@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}ثبت نام - کاپاتی{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="container-fluid">
+        <div class="row min-vh-100">
+            <div class="col-lg-6 d-flex align-items-center">
+                <div class="auth-form-container w-100">
+                    <div class="text-center mb-4" style="width: 100%; max-width: 450px; margin: 0 auto;">
+                        <a href="{{ url_for('dashboard.index') }}" class="navbar-brand fw-bold fs-3">
+                            <img src="{{ url_for('static', filename='img/capati.png') }}" alt="Capati" style="height: 40px; width: auto;">
+                        </a>
+                    </div>
+                    
+                    <div class="card shadow-sm">
+                        <div class="card-body p-4">
+                            <h2 class="text-center mb-4" id="form-title">حساب کاربری ایجاد کنید</h2>
+
+                            <!-- Step 1: Mobile Number Form -->
+                            <form id="signup-otp-form" method="POST">
+                                <div class="mb-3">
+                                    <label for="phone_number" class="form-label">شماره موبایل <span class="text-danger">*</span></label>
+                                    <input type="tel" class="form-control" id="phone_number" name="phone_number" pattern="09[0-9]{9}" placeholder="09123456789" required>
+                                    <div class="form-text">شماره موبایل برای احراز هویت و ورود به سیستم استفاده می‌شود</div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100 mb-3" id="send-otp-btn">
+                                    ارسال کد تایید
+                                </button>
+                            </form>
+
+                            <!-- Step 2: OTP and Password Form (hidden initially) -->
+                            <form id="signup-complete-form" method="POST" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="otp" class="form-label">کد تایید <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="otp" name="otp" placeholder="کد ۶ رقمی" required>
+                                    <div class="form-text">کد ارسالی به موبایل خود را وارد کنید</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">رمز عبور <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <div class="form-text">حداقل ۸ کاراکتر</div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="referral_code" class="form-label">کد معرف (اختیاری)</label>
+                                    <input type="text" class="form-control" id="referral_code" name="referral_code" placeholder="در صورت داشتن کد معرف وارد کنید">
+                                    <div class="form-text">هم شما و هم معرف اعتبار هدیه دریافت خواهید کرد</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center">
+                                                <i data-feather="gift" class="text-success me-2"></i>
+                                                <div>
+                                                    <strong>جایزه خوش‌آمدگویی</strong>
+                                                    <div class="text-muted small">۲۰,۰۰۰ تومان اعتبار اولیه رایگان هدیه دریافت کنید</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100 mb-3">
+                                    تکمیل ثبت نام
+                                </button>
+                            </form>
+
+                            <div class="text-center mt-3">
+                                <p class="mb-0">قبلاً حساب دارید؟
+                                    <a href="{{ url_for('auth.login') }}" class="text-primary text-decoration-none">
+                                        اینجا وارد شوید
+                                    </a>
+                                </p>
+                            </div>
+
+                            <div id="error-message" class="text-danger text-center mt-3" style="display: none;"></div>
+                            <div id="success-message" class="text-success text-center mt-3" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 d-none d-lg-block auth-image-section">
+                <div class="h-100 d-flex align-items-center justify-content-center">
+                    <div class="text-center text-white">
+                        <i data-feather="users" style="width: 80px; height: 80px;" class="mb-4"></i>
+                        <h3 class="fw-bold mb-3">به هزاران سازنده محتوا بپیوندید</h3>
+                        <p class="lead">سفر خود را در تولید محتوای جهانی با پلتفرم کاپاتی آغاز کنید.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+{% endblock %}
