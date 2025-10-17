@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     CHUNK_SIZE: int = 1024 * 1024
     MINIMUM_PAYMENT_AMOUNT: int = 5000
     BASE_URL : str = "http://127.0.0.1:8000"
+
+    SMTP_SERVER : str = ""
+    SMTP_PORT : str = 587
     class Config:
         env_file = ".env"
 
