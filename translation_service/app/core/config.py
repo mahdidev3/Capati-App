@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     CHANGE_MOBILE_OPT_TIME: int | None = 2
     SESSIONS_DIR: str | None = "./upload_sessions"
     WS_LOG_DIR: str | None = "./ws_connections"
-    UPLOAD_DIR: str | None = "uploads"
+    UPLOAD_DIR: str | None = "./uploads"
+    URL_STORAGE_DIR : str | None = "./urls"
     TRANSLATED_DIR: str | None = "translated"
     ENVIRONMENT: str = "development"
     ADMIN_PHONE: str = "09923651580"

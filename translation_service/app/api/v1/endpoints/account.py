@@ -1,3 +1,5 @@
+from http.client import HTTPException
+
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
@@ -75,6 +77,8 @@ def change_password(
             )
         current_user.hashed_password = get_password_hash(passwords.newPassword)
         return {"success": True, "message": "رمز عبور با موفقیت تغییر کرد"}
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -125,6 +129,8 @@ def mobile_change_otp(
                 message="کد تایید با موفقیت ارسال شد",
                 otpId=db_otp.otp_id
             )
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -167,6 +173,8 @@ def mobile_change_verify(
                 "success": True,
                 "message": "شماره موبایل با موفقیت تغییر کرد"
             }
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",

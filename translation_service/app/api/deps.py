@@ -1,7 +1,7 @@
 from fastapi import Depends, Cookie, Header
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.security import verify_token
+from app.core.security import verify_mobile_token
 from app.models.user import User
 from app.services.error_handlers import app_error
 
@@ -21,7 +21,7 @@ async def get_current_user(
             details={"error": "No token provided"},
             status_code=401
         )
-    mobile = verify_token(token)
+    mobile = verify_mobile_token(token)
     if mobile is None:
         app_error(
             code="UNAUTHORIZED",

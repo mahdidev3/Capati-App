@@ -52,15 +52,26 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": "NOT_FOUND",
+                "message": "The requested resource was not found on the server.",
+                "details": str(exc.detail) if exc.detail else "Resource not found."
+            }
+        )
+
     details = {"path": request.url.path}
-    print(exc.detail)
     logger.error(f"HTTP error: Code={exc.detail.get('code', 'UNKNOWN')}, Message={exc.detail.get('message', str(exc))}, Details={exc.detail.get('details' , {})} , Path={request.url.path}")
     admin_message = f"خطای HTTP در {request.url.path}: {exc.detail.get('message', str(exc))}"
-    send_sms(settings.ADMIN_PHONE, admin_message)
+
+    if(not send_sms(settings.ADMIN_PHONE, admin_message)):
+        logger.warning("admin sms id off")
+
     if exc.detail.get("code") in [
         "INVALID_PROJECT_TYPE", "INSUFFICIENT_BALANCE", "PROJECT_NOT_FOUND",
-        "PROJECT_NOT_COMPLETED", "INVALID_TOKEN", "FILE_NOT_FOUND",
-        "INVALID_AMOUNT", "INVALID_PAYMENT", "PAYMENT_ALREADY_PROCESSED"
+        "PROJECT_NOT_COMPLETED","INVALID_AMOUNT", "INVALID_PAYMENT", "PAYMENT_ALREADY_PROCESSED"
     ]:
         db = SessionLocal()
         try:

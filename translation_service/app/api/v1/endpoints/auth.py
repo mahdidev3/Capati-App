@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Response
+from fastapi import APIRouter, Depends, status, Response, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete
 from datetime import datetime, timedelta
@@ -48,6 +48,8 @@ def login_otp(request: MobileRequest, db: Session = Depends(get_db)):
                 "message": "کد تایید با موفقیت ارسال شد",
                 "otpId": db_otp.otp_id
             }
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -98,6 +100,8 @@ def login_otp_verify(
                 token=access_token,
                 user={"id": user.id, "mobile": user.mobile}
             )
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -141,6 +145,8 @@ def login_password(
             token=access_token,
             user={"id": user.id, "mobile": user.mobile}
         )
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -186,6 +192,8 @@ def signup_otp(request: MobileRequest, db: Session = Depends(get_db)):
                 "message": "کد تایید با موفقیت ارسال شد",
                 "otpId": db_otp.otp_id
             }
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -242,6 +250,8 @@ def signup_complete(
                 token=access_token,
                 user={"id": new_user.id, "mobile": new_user.mobile}
             )
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",

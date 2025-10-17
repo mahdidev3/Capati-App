@@ -60,6 +60,7 @@ translations/
 upload_sessions/
 ws_connections/
 translated/
+urls/
 
 # Log files
 *.log

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime, timedelta
@@ -32,6 +32,8 @@ def get_wallet(current_user: User = Depends(get_current_user)):
                 "pricing": PRICING
             }
         }
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -72,6 +74,8 @@ def initiate_payment(
                 "paymentId": payment_id,
                 "redirectUrl": redirect_url
             }
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -114,6 +118,8 @@ def verify_payment(
                 "message": "پرداخت با موفقیت تایید شد",
                 "newBalance": current_user.balance
             }
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",

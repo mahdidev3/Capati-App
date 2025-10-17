@@ -760,17 +760,9 @@ function initializeFormValidation() {
                 return;
             }
 
-            // Validate languages
-            const sourceLanguage = document.getElementById('source_language');
-            const targetLanguage = document.getElementById('target_language');
-            if (!sourceLanguage || !sourceLanguage.value || !targetLanguage || !targetLanguage.value) {
-                showNotification('لطفاً زبان مبدأ و مقصد را انتخاب کنید', 'error');
-                return;
-            }
-
             // Start translation using websocket
             const file = fileInput.files[0];
-            startWebsocketUpload(file, operationType.value, sourceLanguage.value, targetLanguage.value);
+            startWebsocketUpload(file, operationType.value);
         });
     }
 
@@ -872,52 +864,83 @@ function uploadViaWebsocket(file, uploadUrl, uploadToken, chunkSize, logsUrl, pr
     const progressBar = document.getElementById('progressBar');
     const uploadStatus = document.getElementById('uploadStatus');
 
-    // Create websocket connection for upload
-    const wsUrl = uploadUrl.replace('http', 'ws') + `?token=${uploadToken}`;
-    const uploadSocket = new WebSocket(wsUrl);
-
     // Create websocket connection for logs
-    const logsSocket = new WebSocket(logsUrl + `?token=${uploadToken}`);
+    const logsSocket = new WebSocket(logsUrl);
+
+    // Create websocket connection for upload
+    const wsUrl = uploadUrl.replace('http', 'ws');
+    const uploadSocket = new WebSocket(wsUrl);
 
     let totalChunks = Math.ceil(file.size / chunkSize);
     let currentChunk = 0;
     let uploadedBytes = 0;
+    let canStartUpload = false; // Flag to control upload start
+    let stopUpload = false; // Flag to stop upload on complete/error
 
     // Handle logs messages
     logsSocket.onmessage = function(event) {
         const data = JSON.parse(event.data);
 
-        if (data.type === 'progress') {
+        if (data.type === 'status') {
+            uploadStatus.textContent = data.message || 'در حال پردازش...';
+            canStartUpload = true; // Allow upload to start
+            // Start sending metadata and chunks if upload socket is open
+            if (uploadSocket.readyState === WebSocket.OPEN) {
+                sendMetadataAndStart();
+            }
+        } else if (data.type === 'progress') {
             const progress = Math.round((data.progress || 0) * 100);
             progressBar.style.width = progress + '%';
             progressBar.textContent = progress + '%';
             uploadStatus.textContent = data.message || `در حال آپلود... (${progress}%)`;
-        } else if (data.type === 'status') {
-            uploadStatus.textContent = data.message || 'در حال پردازش...';
         } else if (data.type === 'error') {
             showNotification('خطا در آپلود: ' + data.message, 'error');
             uploadProgress.style.display = 'none';
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i data-feather="play" class="me-1"></i>شروع ترجمه';
             if (typeof feather !== 'undefined') feather.replace();
+            stopUpload = true; // Stop upload on error
         } else if (data.type === 'complete') {
             uploadProgress.style.display = 'none';
             showNotification('ویدیو با موفقیت آپلود شد! پردازش در حال انجام است...', 'success');
-
-            // Start tracking job status
+            stopUpload = true; // Stop upload on completion
             trackUploadProgress(projectId);
-
-            // Reload page after delay
             setTimeout(() => {
-                window.location.href = '/dashboard';
+                window.location.href = '/';
             }, 2000);
         }
+    };
+
+    logsSocket.onerror = function(error) {
+        console.error('Logs WebSocket error:', error);
+        showNotification('خطا در اتصال به سرور لاگ', 'error');
+        uploadProgress.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-feather="play" class="me-1"></i>شروع ترجمه';
+        if (typeof feather !== 'undefined') feather.replace();
+        stopUpload = true;
     };
 
     // Handle upload socket events
     uploadSocket.onopen = function() {
         uploadStatus.textContent = 'در حال اتصال به سرور...';
+        // Only send metadata and start upload if status message received
+        if (canStartUpload) {
+            sendMetadataAndStart();
+        }
+    };
 
+    uploadSocket.onerror = function(error) {
+        console.error('Upload WebSocket error:', error);
+        showNotification('خطا در اتصال به سرور', 'error');
+        uploadProgress.style.display = 'none';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-feather="play" class="me-1"></i>شروع ترجمه';
+        if (typeof feather !== 'undefined') feather.replace();
+        stopUpload = true;
+    };
+
+    function sendMetadataAndStart() {
         // Send file metadata first
         const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
         uploadSocket.send(JSON.stringify({
@@ -926,19 +949,10 @@ function uploadViaWebsocket(file, uploadUrl, uploadToken, chunkSize, logsUrl, pr
 
         // Start sending chunks
         sendNextChunk();
-    };
-
-    uploadSocket.onerror = function(error) {
-        console.error('WebSocket error:', error);
-        showNotification('خطا در اتصال به سرور', 'error');
-        uploadProgress.style.display = 'none';
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i data-feather="play" class="me-1"></i>شروع ترجمه';
-        if (typeof feather !== 'undefined') feather.replace();
-    };
+    }
 
     function sendNextChunk() {
-        if (currentChunk >= totalChunks) {
+        if (currentChunk >= totalChunks || stopUpload) {
             uploadSocket.close();
             return;
         }
@@ -967,7 +981,6 @@ function uploadViaWebsocket(file, uploadUrl, uploadToken, chunkSize, logsUrl, pr
         reader.readAsArrayBuffer(chunk);
     }
 }
-
 // Progress tracking for uploads
 function trackUploadProgress(projectId) {
     const checkStatus = () => {

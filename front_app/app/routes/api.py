@@ -80,10 +80,10 @@ def api_initiate_payment():
     return payment_service.initiate_payment(request.json, request.cookies)
 
 # Translation endpoints
-@api_bp.route('/translate/options', methods=['POST'])
+@api_bp.route('/translate/prices', methods=['POST'])
 def api_translate_options():
     translation_service = TranslationService()
-    return translation_service.get_options(request.cookies)
+    return translation_service.get_prices( request.json, request.cookies)
 
 @api_bp.route('/translate/start', methods=['POST'])
 def api_translate_start():
@@ -99,8 +99,3 @@ def api_translate_status(project_id):
 def api_translate_download(project_id):
     translation_service = TranslationService()
     return translation_service.get_download_url(project_id, request.cookies)
-
-@api_bp.route('/translate/download/<project_id>/file', methods=['GET'])
-def api_translate_download_file(project_id):
-    translation_service = TranslationService()
-    return translation_service.download_file(project_id, request.args.get('token'), request.cookies)

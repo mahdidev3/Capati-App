@@ -7,7 +7,7 @@ dashboard_bp = Blueprint('dashboard', __name__)
 def index():
     translation_service = TranslationService()
     dashboard_data = translation_service.get_dashboard_data(request.cookies)
-    
+    print(dashboard_data.get('data').get('completedProjects'))
     if dashboard_data:
         if (dashboard_data.get('success' , False)):
             return render_template('dashboard/dashboard.html',

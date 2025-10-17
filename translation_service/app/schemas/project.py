@@ -7,6 +7,7 @@ from app.models.project import ProjectType, ProjectStatus
 
 
 class ProjectBase(BaseModel):
+    project_id : int
     name: str
     type: ProjectType
     status: ProjectStatus
@@ -38,11 +39,13 @@ class VideoUploadResponse(BaseModel):
     size: int
     duration: int  # شبیه‌سازی شده
 
+class TranslationOptionsRequest(BaseModel):
+    duration: float
+    resolution: str
 
 class TranslationOptionsResponse(BaseModel):
     success: bool
     data: dict
-
 
 class StartTranslationRequest(BaseModel):
     videoSize: int  # bytes - required now

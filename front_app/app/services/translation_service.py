@@ -25,17 +25,21 @@ class TranslationService:
     def get_operation_types(self):
         # This should be fetched from the backend in a real implementation
         return {
-            "english_subtitle": "English Subtitle",
-            "persian_subtitle": "Persian Subtitle",
-            "persian_dubbing": "Persian Dubbing",
-            "persian_dubbing_english_subtitle": "Persian Dubbing with English Subtitle",
-            "persian_dubbing_persian_subtitle": "Persian Dubbing with Persian Subtitle"
+            "english_subtitle": "زیرنویس انگلیسی",
+            "persian_subtitle": "زیرنویس پارسی",
+            "persian_dubbing": "دوبله پارسی",
+            "persian_dubbing_english_subtitle": "دوبله پارسی با زیرنویس انگلیسی",
+            "persian_dubbing_persian_subtitle": "دوبله پارسی با زیرنویس پارسی"
         }
-    
-    def get_options(self, cookies):
+
+    def get_prices(self,data , cookies):
         try:
             response = requests.post(
-                f"{self.backend_url}/translate/options",
+                f"{self.backend_url}/translate/prices",
+                json = {
+                    data.get('duration'),
+                    data.get('resolution')
+                },
                 cookies=cookies
             )
 
@@ -95,9 +99,9 @@ class TranslationService:
                 f"{self.backend_url}/translate/download/{project_id}",
                 cookies=cookies
             )
-            
-            if response.status_code == 200:
-                return jsonify(response.json())
+            response_data = response.json()
+            if response.status_code == 200 and response_data.get('success'):
+                return self.download_file(response_data.get('data').get('downloadUrl') , cookies=cookies)
             elif response.status_code == 401:
                 return redirect(url_for('auth.login'))
             else:
@@ -105,11 +109,10 @@ class TranslationService:
         except requests.exceptions.RequestException:
             return jsonify({"success": False, "message": "Server error"})
     
-    def download_file(self, project_id, token, cookies):
+    def download_file(self, download_url, cookies):
         try:
             response = requests.get(
-                f"{self.backend_url}/translate/download/{project_id}/file",
-                params={"token": token},
+                download_url,
                 cookies=cookies
             )
             

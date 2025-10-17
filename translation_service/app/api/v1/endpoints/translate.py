@@ -4,7 +4,7 @@ import math
 import asyncio
 import json
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, UploadFile, File, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, Depends, UploadFile, File, WebSocket, WebSocketDisconnect, Query, HTTPException
 from fastapi.responses import FileResponse
 from requests import session
 from sqlalchemy.orm import Session
@@ -16,9 +16,10 @@ from app.models.project import Project as DBProject, ProjectStatus, get_project_
 from app.schemas.project import (
     VideoUploadResponse, TranslationOptionsResponse,
     StartTranslationRequest, StartTranslationResponse,
-    TranslationStatusResponse, DownloadUrlResponse
+    TranslationStatusResponse, DownloadUrlResponse, TranslationOptionsRequest
 )
 from app.api.deps import get_current_user
+from app.services.download import verify_download_token, get_download_url_with_token
 from app.services.pricing import PRICING, calculate_price, get_pricing
 from app.core.security import generate_upload_token, verify_upload_token, create_access_token
 from app.core.websocket_manager import manager
@@ -30,10 +31,46 @@ router = APIRouter()
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 os.makedirs(settings.TRANSLATED_DIR, exist_ok=True)
 
-@router.post("/translate/options", response_model=TranslationOptionsResponse)
-def get_translation_options(current_user: User = Depends(get_current_user)):
+
+@router.post("/translate/prices", response_model=TranslationOptionsResponse)
+def get_translation_options(request: TranslationOptionsRequest, current_user: User = Depends(get_current_user)):
     try:
-        prices = get_pricing()
+        duration = request.duration  # مدت زمان ویدیو (به ثانیه)
+        resolution = request.resolution  # رزولوشن ویدیو (مثل "1280x720")
+
+        # قیمت پایه برای هر عملیات (به تومان در دقیقه)
+        base_prices = {
+            "english_subtitle": 4000,
+            "persian_subtitle": 4000,
+            "persian_dubbing": 5000,
+            "persian_dubbing_english_subtitle": 6000,
+            "persian_dubbing_persian_subtitle": 6000
+        }
+
+        # محاسبه ضریب بر اساس رزولوشن
+        height = 720
+        width = 1280
+        if resolution and "x" in resolution:
+            height = int(resolution.split("x")[1])
+            width = int(resolution.split("x")[0])
+
+        multiplier = 1.0
+        if height * width > (3840 * 2160):  # 4K
+            multiplier = 4.0
+        elif height * width > (2560 * 1440):  # 2K
+            multiplier = 3.0
+        elif height * width > (1920 * 1080):  # Full HD
+            multiplier = 2.0
+        elif height * width > (1280 * 720):  # HD
+            multiplier = 1.5
+
+        # محاسبه قیمت برای هر عملیات
+        minutes = max(1, math.ceil(duration / 60))  # تبدیل به دقیقه
+        prices = {
+            op: math.ceil(minutes * price * multiplier)
+            for op, price in base_prices.items()
+        }
+
         return {
             "success": True,
             "data": {
@@ -291,27 +328,23 @@ def get_download_url(
     db: Session = Depends(get_db)
 ):
     try:
-        with db.begin():
-            project = db.query(DBProject).filter(DBProject.id == project_id, DBProject.user_id == current_user.id).first()
-            if not project or project.status != ProjectStatus.completed:
-                app_error(
-                    code="PROJECT_NOT_COMPLETED",
-                    message="پروژه تکمیل شده یافت نشد",
-                    status_code=404
-                )
-            expires_at = datetime.utcnow() + timedelta(minutes=settings.DOWNLOAD_TOKEN_EXPIRE_MINUTES)
-            download_token = create_access_token(
-                data={"project_id": project_id, "type": "download"},
-                expires_delta=timedelta(minutes=settings.DOWNLOAD_TOKEN_EXPIRE_MINUTES)
+        project = db.query(DBProject).filter(DBProject.id == project_id, DBProject.user_id == current_user.id).first()
+        if not project or project.status != ProjectStatus.completed:
+            app_error(
+                code="PROJECT_NOT_COMPLETED",
+                message="پروژه تکمیل شده یافت نشد",
+                status_code=404
             )
-            download_url = f"/v1/translate/download/{project_id}/file?token={download_token}"
-            return {
-                "success": True,
-                "data": {
-                    "downloadUrl": download_url,
-                    "expiresAt": expires_at.isoformat()
-                }
+
+        download_url,expires_at  = get_download_url_with_token(project_id)
+
+        return {
+            "success": True,
+            "data": {
+                "downloadUrl": download_url,
+                "expiresAt": expires_at.isoformat()
             }
+        }
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
@@ -328,29 +361,33 @@ def download_file(
     db: Session = Depends(get_db)
 ):
     try:
-        with db.begin():
-            payload = verify_upload_token(token)  # Reusing verify_upload_token for simplicity
-            if not payload or payload.get("project_id") != project_id or payload.get("type") != "download":
-                app_error(
-                    code="INVALID_TOKEN",
-                    message="لینک دانلود نامعتبر یا منقضی شده است",
-                    status_code=401
-                )
-            project = db.query(DBProject).filter(DBProject.id == project_id, DBProject.user_id == current_user.id).first()
-            if not project or project.status != ProjectStatus.completed:
-                app_error(
-                    code="PROJECT_NOT_COMPLETED",
-                    message="فایل برای دانلود یافت نشد",
-                    status_code=404
-                )
-            file_path = os.path.join(settings.TRANSLATED_DIR, f"{project.id}_translated.{session['file_extension'] or 'mp4'}")
-            if not os.path.exists(file_path):
-                app_error(
-                    code="FILE_NOT_FOUND",
-                    message="فایل ترجمه شده هنوز آماده نشده است",
-                    status_code=404
-                )
-            return FileResponse(path=file_path, filename=f"translated_{project.video_id}")
+        token_project_id, is_download = verify_download_token(token)  # Reusing verify_upload_token for simplicity
+        if token_project_id != project_id or not is_download:
+            app_error(
+                code="INVALID_TOKEN",
+                message="لینک دانلود نامعتبر یا منقضی شده است",
+                status_code=401
+            )
+        print(11111111111111111)
+        project = db.query(DBProject).filter(DBProject.id == project_id, DBProject.user_id == current_user.id).first()
+        if not project or project.status != ProjectStatus.completed:
+            app_error(
+                code="PROJECT_NOT_COMPLETED",
+                message="فایل برای دانلود یافت نشد",
+                status_code=404
+            )
+        print(session)
+        file_path = os.path.join(settings.TRANSLATED_DIR,
+                                 f"{project.id}_translated.{project.video_id.split('.')[-1]}")
+        if not os.path.exists(file_path):
+            app_error(
+                code="FILE_NOT_FOUND",
+                message="فایل ترجمه شده هنوز آماده نشده است",
+                status_code=404
+            )
+        return FileResponse(path=file_path, filename=f"translated_{project.video_id}")
+    except HTTPException as http:
+        raise http
     except Exception as e:
         app_error(
             code="INTERNAL_SERVER_ERROR",
